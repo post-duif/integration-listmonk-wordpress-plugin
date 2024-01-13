@@ -1,6 +1,6 @@
 # Integration for listmonk mailing list and newsletter service (WordPress plugin)
 
-This WordPress plugin integrates [listmonk](https://listmonk.app/) with your WordPress / WooCommerce website. You can use it to let people subscribe to your newsletter from a form on your website (using WPForms) or you can let people subscribe to your newsletter from the WooCommerce checkout page. 
+This WordPress plugin integrates [listmonk](https://listmonk.app/) with your WordPress / WooCommerce website. You can use it to (1) let people subscribe to your newsletter from a form on your website (using WPForms), or (2) you can let people subscribe to your newsletter from the WooCommerce checkout page. After a customer pays, their email address and name will be sent to the listmonk mailing list of your choice.
 
 Using listmonk as an open source newsletter and mailing tool, makes you (1) less dependent on services like Mailchimp, (2) costs less and (3) has no limits on the amounts of emails you can send i.e. per month.
 
@@ -17,8 +17,11 @@ Using listmonk as an open source newsletter and mailing tool, makes you (1) less
 This plugin uses the well-documented listmonk API to send data from your WordPress server to the listmonk server over HTTPS.
 
 ## Requirements
-- A listmonk server accessible over HTTPS 
-- The server WordPress is running on should have cURL enabled. 
+- A listmonk server accessible over HTTPS;
+- The server WordPress is running on should have cURL enabled;
+- For using this plugin with a form that people can fill in to subscribe to your mailing list, you should have the free WPForms plugin installed and choose their standard newsletter form. Input that form ID in the settings page of this plugin 
+- For using this plugin to let customers customers to your mailing list in WooCommerce checkout, you should make sure you add a checkbox named "newsletter 
+_option". When they check that box, their email address and name will be sent to your listmonk server. You can use other plugins to add custom checkout fields. 
 
 ## Future plans 
 I plan to include an option to add a custom checkout field to this plugin, which would remove the need for installing another plugin to create a custom checkout field named "newsletter_optin". 
