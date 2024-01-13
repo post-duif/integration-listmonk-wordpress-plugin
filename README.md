@@ -17,7 +17,8 @@ Using listmonk as an open source newsletter and mailing tool, makes you (1) less
 This plugin uses the well-documented listmonk API to send data from your WordPress server to the listmonk server over HTTPS.
 
 ## Requirements
-This plugin uses cURL to communicate with the listmonk API. It needs to be enabled on your server. Your listmonk server should be accessible over HTTPS. 
+- A listmonk server accessible over HTTPS 
+- The server WordPress is running on should have cURL enabled. 
 
 ## Future plans 
 I plan to include an option to add a custom checkout field to this plugin, which would remove the need for installing another plugin to create a custom checkout field named "newsletter_optin". 
