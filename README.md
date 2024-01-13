@@ -19,6 +19,9 @@ This plugin uses the well-documented listmonk API to send data from your WordPre
 ## Requirements
 This plugin uses cURL to communicate with the listmonk API. It needs to be enabled on your server.
 
+## Future plans 
+I plan to include an option to add a custom checkout field to this plugin, which would remove the need for installing another plugin to create a custom checkout field named. 
+
 ## What about privacy?
 
 For each users that subscribes to a mailing list, their IP address and is recorded as well as a timestamp of subscription time. For subscribers through the WooCommerce checkout, there is no double opt-in, but for people subscribing through a form there is a double opt-in. 
