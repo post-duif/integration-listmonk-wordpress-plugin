@@ -12,6 +12,22 @@ License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 */
 
+// for when the user uninstalls
+
+// Register the uninstall hook
+register_uninstall_hook(__FILE__, 'listmonk_uninstall');
+
+// ensure that all options are deleted when the user uninstalls the plugin
+function listmonk_uninstall() {
+    delete_option('listmonk_username');
+    delete_option('listmonk_password');
+    delete_option('listmonk_url');
+    delete_option('listmonk_list_id');
+    delete_option('listmonk_wpforms_form_id');
+    delete_option('listmonk_form_on');
+    delete_option('listmonk_checkout_on');
+}
+
 // required for encrypting the listmonk password
 require_once plugin_dir_path( __FILE__ ) . 'fsd-data-encryption.php';
 
@@ -71,10 +87,10 @@ function wpf_dev_process_complete( $fields, $entry, $form_data, $entry_id ) {
         return; // Abort if settings are not configured
     }
     $listmonk_wpforms_form_id = absint(get_option('listmonk_wpforms_form_id')); // convert form id from option to integer
-    $form_listmonk_on = get_option('form_listmonk_on'); // check if the listmonk form option is disabled in settings
+    $listmonk_form_on = get_option('listmonk_form_on'); // check if the listmonk form option is disabled in settings
 
     // check if the form id matches the form id from the settings page and if the listmonk form option is enabled
-    if (get_option('form_listmonk_on') != 'yes' || absint($form_data['id']) !== $listmonk_wpforms_form_id) { 
+    if (get_option('listmonk_form_on') != 'yes' || absint($form_data['id']) !== $listmonk_wpforms_form_id) { 
         return;
     }
 
@@ -133,7 +149,7 @@ add_action( 'wpforms_process_complete', 'wpf_dev_process_complete', 10, 4 );
 add_action( 'woocommerce_thankyou', 'sub_newsletter_after_order', 10, 1 );
 function sub_newsletter_after_order( $order_id ){
     // check ff the listmonk checkout component is enabled in settings
-    if (get_option('checkout_listmonk_on') != 'yes') { 
+    if (get_option('listmonk_checkout_on') != 'yes') { 
         return;
     }
     if( ! $order_id ){ // if order id is not set, return
@@ -358,24 +374,24 @@ function listmonk_settings_fields(){
     );
 
     // Register and add settings fields
-    register_setting($option_group, 'checkout_listmonk_on', 'sanitize_checkbox');
+    register_setting($option_group, 'listmonk_checkout_on', 'sanitize_checkbox');
     add_settings_field(
-        'checkout_listmonk_on',
+        'listmonk_checkout_on',
         'Enable listmonk integration on Woocommerce Checkout:',
         'render_checkbox_field',
         $page_slug,
         'listmonk_plugin_components',
-        array('name' => 'checkout_listmonk_on')
+        array('name' => 'listmonk_checkout_on')
     );
 
-    register_setting($option_group, 'form_listmonk_on', 'sanitize_checkbox');
+    register_setting($option_group, 'listmonk_form_on', 'sanitize_checkbox');
     add_settings_field(
-        'form_listmonk_on',
+        'listmonk_form_on',
         'Enable listmonk integration on a custom form using WPForms plugin:',
         'render_checkbox_field',
         $page_slug,
         'listmonk_plugin_components',
-        array('name' => 'form_listmonk_on')
+        array('name' => 'listmonk_form_on')
     );
 
     register_setting($option_group, 'listmonk_wpforms_form_id', 'sanitize_list_id');
@@ -511,16 +527,16 @@ function render_checkbox_field($args){
     $value = get_option($args['name']);
     
     // Check if WPForms or any plugin with a name starting with "wpforms" is active
-    if ($args['name'] === 'form_listmonk_on' && !is_plugin_active_with_prefix('wpforms')) {
-        // WPForms or a matching plugin is not active and the field is "form_listmonk_on," disable the checkbox and set it as unchecked
+    if ($args['name'] === 'listmonk_form_on' && !is_plugin_active_with_prefix('wpforms')) {
+        // WPForms or a matching plugin is not active and the field is "listmonk_form_on," disable the checkbox and set it as unchecked
         $disabled = 'disabled="disabled"';
         $checked = '';
         $message = 'WPForms not installed'; // Message for when WPForms is not installed
     } else {
-        // WPForms or a matching plugin is active or the field is not "form_listmonk_on," enable the checkbox and set its value based on the option
+        // WPForms or a matching plugin is active or the field is not "listmonk_form_on," enable the checkbox and set its value based on the option
         $disabled = '';
         $checked = checked($value, 'yes', false); // Set to checked if the option value is ' yes'
-        $message = ''; // No message when WPForms is active or the field is not "form_listmonk_on"
+        $message = ''; // No message when WPForms is active or the field is not "listmonk_form_on"
     }
     
     ?>
@@ -565,7 +581,7 @@ function is_plugin_active_with_prefix($prefix){
 // Function to render WPForms Form ID field
 function render_wpforms_form_id_field($args) {
     $option = get_option($args['name'], '1');
-    $disabled = get_option('form_listmonk_on') !== 'yes' ? 'disabled' : '';
+    $disabled = get_option('listmonk_form_on') !== 'yes' ? 'disabled' : '';
 
     printf(
         '<input class="listmonk-number-input" type="number" id="listmonk_wpforms_form_id" name="%s" value="%d" %s />',
