@@ -27,7 +27,7 @@ _option". When they check that box, their email address and name will be sent to
 I plan to include an option to add a custom checkout field to this plugin, which would remove the need for installing another plugin to create a custom checkout field named "newsletter_optin". 
 
 ## What about privacy?
-For each users that subscribes to a mailing list, their IP address and is recorded as well as a timestamp of subscription time. For subscribers through the WooCommerce checkout, there is no double opt-in, but for people subscribing through a form there is a double opt-in. 
+For each user that subscribes to a mailing list, their IP address and is recorded as well as a timestamp of subscription time. For subscribers through the WooCommerce checkout, there is no double opt-in, but for people subscribing through a form there is a double opt-in. When people subscribe through WooCommerce checkout, their country is also saved to listmonk. 
 
 ## Contribute
 Feel free to submit an issue or pull request if you have any questions or suggestions for improvement. If you have knowledge of the listmonk API you can adapt this plugin to fit your specific needs (i.e. change all subscriptions to opt-in).
