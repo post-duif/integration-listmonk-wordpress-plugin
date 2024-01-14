@@ -27,6 +27,9 @@ This plugin uses the well-documented listmonk API to send data from your WordPre
 ## What about privacy?
 For each user that subscribes to a mailing list, their IP address and is recorded as well as a timestamp of subscription time. For subscribers through the WooCommerce checkout, there is no double opt-in, but for people subscribing through a form there is a double opt-in. When people subscribe through WooCommerce checkout, their country is also saved to listmonk. 
 
+## Suggestions and bugs
+If you encounter any bugs or if you have suggestions for improvement, please create an issue on GitHub.
+
 ## Contribute
 Feel free to submit an issue or pull request if you have any questions or suggestions for improvement. If you have knowledge of the listmonk API you can adapt this plugin to fit your specific needs (i.e. change all subscriptions to opt-in).
 
