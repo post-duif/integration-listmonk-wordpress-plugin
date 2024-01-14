@@ -505,7 +505,7 @@ function listmonk_settings_fields(){
     register_setting($option_group, 'listmonk_optin_text', 'sanitize_text_field');
     add_settings_field(
         'listmonk_optin_text', // Field ID
-        'Newsletter subscription opt-in text:', // Field title
+        'WooCommerce checkout newsletter opt-in text:', // Field title
         'render_listmonk_optin_text', // Callback for field markup
         $page_slug, // Page slug
         'listmonk_plugin_components', // Section ID
