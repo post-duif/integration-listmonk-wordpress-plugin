@@ -5,7 +5,7 @@ Text Domain: integration-listmonk
 Plugin URI: https://github.com/post-duif/listmonk-woocommerce-plugin
 Description: Connects the open source listmonk mailing list and newsletter service to WordPress and WooCommerce, so users can subscribe to your mailing lists through a form on your website or through WooCommerce checkout.
 Author: postduif
-Version: 1.1.2
+Version: 1.1.3
 Requires PHP: 7.4
 Requires at least: 5.7
 License: GNU General Public License v3.0
@@ -313,6 +313,13 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
         echo '</div>';
     }
 
+    if (!function_exists('curl_init')) {
+        // cURL is not enabled
+        echo '<div class="notice notice-warning">';
+        echo '<p>cURL is not enabled on your server. Listmonk integration is dependent on cURL, so this plugin will not work. Contact your server administrator to check if cURL can be enabled on your server.</p>';
+        echo '</div>';
+    }
+
     ?>
         <div class="wrap">
             <h1><?php echo get_admin_page_title(); ?></h1>
@@ -386,11 +393,20 @@ function sanitize_listmonk_url($input){ // Function to sanitize the listmonk URL
     }
 
     // Check if the URL is reachable
-    if (!is_url_reachable($url)) {
+    if (function_exists('curl_init')) {
+        if (!is_url_reachable($url)) {
+            add_settings_error(
+                'listmonk_url', 
+                'unreachable_url', 
+                'The URL you provided is not reachable, so it cannot be used to connect to a listmonk server. Maybe you made a typo?' // Error message
+            );
+            return get_option('listmonk_url'); // Return the previous value
+        }
+    } else {
         add_settings_error(
             'listmonk_url', 
-            'unreachable_url', 
-            'The URL you provided is not reachable, so it cannot be used to connect to listmonk.' // Error message
+            'curl_not_enabled', 
+            'cURL is not enabled on this server. Please enable cURL to use the URL validation feature.' // Error message
         );
         return get_option('listmonk_url'); // Return the previous value
     }
