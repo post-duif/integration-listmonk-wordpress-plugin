@@ -24,9 +24,6 @@ This plugin uses the well-documented listmonk API to send data from your WordPre
 - For using this plugin with a form that people can fill in to subscribe to your mailing list, you should have the free WPForms plugin installed and choose their standard newsletter form. Input that form ID in the settings page of this plugin 
 - For using this plugin to let customers customers to your mailing list in WooCommerce checkout, on the settings page you can add custom text to be shown next to the checkbox. When they check that box, their email address and name will be sent to your listmonk server. You can use other plugins to add custom checkout fields. 
 
-## Future plans 
-I plan to include an option to add a custom checkout field to this plugin, which would remove the need for installing another plugin to create a custom checkout field named "newsletter_optin". 
-
 ## What about privacy?
 For each user that subscribes to a mailing list, their IP address and is recorded as well as a timestamp of subscription time. For subscribers through the WooCommerce checkout, there is no double opt-in, but for people subscribing through a form there is a double opt-in. When people subscribe through WooCommerce checkout, their country is also saved to listmonk. 
 
