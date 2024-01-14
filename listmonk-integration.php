@@ -16,20 +16,10 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 function listmonk_is_checkout_block_enabled() {
     $checkout_page_id = wc_get_page_id('checkout');
 
-    // Log the checkout page ID for debugging
-    error_log('Checkout Page ID: ' . $checkout_page_id);
-
     if ($checkout_page_id && $checkout_page_id != -1) {
         $has_checkout_block = WC_Blocks_Utils::has_block_in_page($checkout_page_id, 'woocommerce/checkout');
-
-        // Log the result of checking for the checkout block
-        error_log('Has Checkout Block: ' . ($has_checkout_block ? 'true' : 'false'));
-
         return $has_checkout_block;
     } else {
-        // Log an error message if the checkout page ID is invalid
-        error_log('Invalid Checkout Page ID.');
-
         return false;
     }
 }
