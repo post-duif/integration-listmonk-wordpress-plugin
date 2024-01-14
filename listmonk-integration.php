@@ -67,6 +67,9 @@ add_action('wp_loaded', 'initialize_listmonk_integration');
 
 // add newsletter checkbox to checkout
 function listmonk_add_newsletter_checkbox_to_checkout($fields) {
+    if(listmonk_is_checkout_block_enabled()) {
+        return; // Abort if the checkout block is enabled
+    }
     $email_priority = isset($fields['billing']['billing_email']['priority']) ? $fields['billing']['billing_email']['priority'] : 20;
     
     // Retrieve the custom label text from the options, with a default value
