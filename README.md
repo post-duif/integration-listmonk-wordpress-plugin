@@ -11,7 +11,7 @@ Using listmonk as an open source newsletter and mailing tool, makes you (1) less
 3. Use either WPForms or a custom field on the WooCommerce checkout page to send subscriber data to listmonk. You can add the checkout field with this plugin if you use the classic WooCommerce checkout. WooCommerce block based checkout is not yet supported.
 4. Figure out the _listmonk list ID_ that you want to use to subscribe everyone to. See listmonk documentation for more details.
 5. Open the settings page of this plugin from your WordPress admin dashboard under Settings. Enter your the listmonk list ID, listmonk server url, username and password. You can also enable and disable the WooCommerce and WPForms components. 
-<img width="1279" alt="Screenshot 2024-01-13 at 03 58 42" src="https://github.com/post-duif/listmonk-WooCommerce-plugin/assets/126626953/5383d893-8963-41ed-9cc6-dc767782c2e7">
+<img width="1303" alt="Screenshot 2024-01-14 at 02 43 23" src="https://github.com/post-duif/integration-listmonk-wordpress-plugin/assets/126626953/5ac9a54c-a010-478e-b878-83612d7f9fe6">
 
 ## How does the plugin work?
 This plugin uses the well-documented listmonk API to send data from your WordPress server to the listmonk server over HTTPS.
