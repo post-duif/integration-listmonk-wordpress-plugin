@@ -5,7 +5,7 @@ Text Domain: integration-listmonk
 Plugin URI: https://github.com/post-duif/listmonk-woocommerce-plugin
 Description: Connects the open source listmonk mailing list and newsletter service to WordPress and WooCommerce, so users can subscribe to your mailing lists through a form on your website or through WooCommerce checkout.
 Author: postduif
-Version: 1.0
+Version: 1.1.1
 Requires PHP: 7.4
 Requires at least: 5.7
 License: GNU General Public License v3.0
