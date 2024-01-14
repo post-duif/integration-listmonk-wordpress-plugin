@@ -711,4 +711,13 @@ function render_listmonk_list_id_field($args) { // Function to render listmonk L
     );
 }
 
+// Render a button on the WordPress plugin page to easily access this plugin's settings
+function listmonk_plugin_page_settings_link($links) {
+    $settings_link = '<a href="options-general.php?page=listmonk_integration">Settings</a>';
+    array_push($links, $settings_link);
+    return $links;
+}
+
+add_filter('plugin_action_links_listmonk-integration/listmonk-integration.php', 'listmonk_plugin_page_settings_link');
+
 ?>
