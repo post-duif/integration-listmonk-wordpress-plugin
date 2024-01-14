@@ -515,9 +515,8 @@ function listmonk_settings_fields(){
 
 // Description for the 'Plugin Components' section
 function listmonk_plugin_components_description() { // Function to render the description for the 'Plugin Components' section
-    echo '<p>Integration for listmonk mailing list and newsletter service can be enabled in two ways. (1) On the WooCommerce checkout. Customers can check a box to subscribe to the newsletter.
-    For this to work you need to  work with a custom fields plugin to show a newsletter checkbox to the user.
-    The default custom field that is checked for consent is "newsletter_optin". You can create this for example with a custom fields plugin. See the README for more info.
+    echo '<p>Integration for listmonk mailing list and newsletter service can be enabled in two ways. (1) On the WooCommerce checkout. Customers can check a box to subscribe to the newsletter. This check box will be added below the email address field.
+    You can customize the text they will see by changing the text in the text box below. Currently only the old WooCommerce checkout is supported (so not the WooCommerce Blocks).
     (2) On a custom page, using a custom newsletter form from the <a href="https://wordpress.org/plugins/wpforms-lite/">WPForms plugin</a> that you can include anywhere on your website. You can enter the WPForms form ID on this settings page.
     </p><p>See <a href="https://listmonk.app/docs/">the listmonk documentation</a> for more information on how to setup listmonk, either on your own server or easily hosted versions on services like <a href="https://railway.app/new/template/listmonk">Railway</a> and <a href="https://www.pikapods.com/pods?run=listmonk">Pikapods</a>.</p>
     ';
