@@ -105,7 +105,7 @@ function listmonk_display_newsletter_subscription_in_admin_order_meta($order) {
 // end of the code to add newsletter checkbox to checkout
 
 // required for encrypting the listmonk password
-require_once plugin_dir_path( __FILE__ ) . 'fsd-data-encryption.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/fsd-data-encryption.php';
 
 ## get user ip
 function listmonk_get_the_user_ip() {
