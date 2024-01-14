@@ -5,12 +5,24 @@ Text Domain: integration-listmonk
 Plugin URI: https://github.com/post-duif/listmonk-woocommerce-plugin
 Description: Connects the open source listmonk mailing list and newsletter service to WordPress and WooCommerce, so users can subscribe to your mailing lists through a form on your website or through WooCommerce checkout.
 Author: postduif
-Version: 1.0
+Version: 1.1.1
 Requires PHP: 7.4
 Requires at least: 5.7
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 */
+
+// check if WooCommerce checkout block is active
+function listmonk_is_checkout_block_enabled() {
+    $checkout_page_id = wc_get_page_id('checkout');
+
+    if ($checkout_page_id && $checkout_page_id != -1) {
+        $has_checkout_block = WC_Blocks_Utils::has_block_in_page($checkout_page_id, 'woocommerce/checkout');
+        return $has_checkout_block;
+    } else {
+        return false;
+    }
+}
 
 // for when the user uninstalls
 
@@ -45,6 +57,9 @@ add_action('wp_loaded', 'initialize_listmonk_integration');
 
 // add newsletter checkbox to checkout
 function listmonk_add_newsletter_checkbox_to_checkout($fields) {
+    if(listmonk_is_checkout_block_enabled()) {
+        return; // Abort if the checkout block is enabled
+    }
     $email_priority = isset($fields['billing']['billing_email']['priority']) ? $fields['billing']['billing_email']['priority'] : 20;
     
     // Retrieve the custom label text from the options, with a default value
@@ -288,6 +303,16 @@ function listmonk_top_lvl_menu(){
 
 // Callback function to render the plugin settings page
 function listmonk_integration_page_callback(){ // Function to render the plugin settings page
+
+    // Display warning if both conditions are met
+    if (listmonk_is_checkout_block_enabled() && get_option('listmonk_checkout_on') == 'yes') {
+        echo '<div class="notice notice-warning">';
+        echo '<p>The new <a href="https://woo.com/checkout-blocks/">WooCommerce checkout block</a> is enabled on your site. This means the listmonk integration that
+        let\'s users subscribe to your newsletter from the checkout page will not work. Compatibility with the WooCommerce checkout block is being worked on.
+        If this integration is important to you, <a href="https://woo.com/document/cart-checkout-blocks-status/#section-7">consider switching back to the old WooCommerce checkout experience</a>.</p>';
+        echo '</div>';
+    }
+
     ?>
         <div class="wrap">
             <h1><?php echo get_admin_page_title(); ?></h1>
@@ -504,9 +529,9 @@ function listmonk_settings_fields(){
 
 // Description for the 'Plugin Components' section
 function listmonk_plugin_components_description() { // Function to render the description for the 'Plugin Components' section
-    echo '<p>Integration for listmonk mailing list and newsletter service can be enabled in two ways. (1) On the WooCommerce checkout. Customers can check a box to subscribe to the newsletter. This check box will be added below the email address field.
-    You can customize the text they will see by changing the text in the text box below. Currently only the old WooCommerce checkout is supported (so not the WooCommerce Blocks).
-    (2) On a custom page, using a custom newsletter form from the <a href="https://wordpress.org/plugins/wpforms-lite/">WPForms plugin</a> that you can include anywhere on your website. You can enter the WPForms form ID on this settings page.
+    echo '<p>Integration for listmonk mailing list and newsletter manager can be enabled in two ways:</p><p> (1) On the WooCommerce checkout. Customers can check a box to subscribe to your newsletter. This check box will be added below the email address field.
+    You can customize the text they will see by changing the text in the text box below. Currently only the old WooCommerce checkout is supported (so not the WooCommerce Blocks based checkout).
+    </p><p>(2) On any page on your website, using a custom newsletter form from the <a href="https://wordpress.org/plugins/wpforms-lite/">WPForms plugin</a> that you can include anywhere on your website. You can enter the WPForms form ID on this settings page.
     </p><p>See <a href="https://listmonk.app/docs/">the listmonk documentation</a> for more information on how to setup listmonk, either on your own server or easily hosted versions on services like <a href="https://railway.app/new/template/listmonk">Railway</a> and <a href="https://www.pikapods.com/pods?run=listmonk">Pikapods</a>.</p>
     ';
 }
