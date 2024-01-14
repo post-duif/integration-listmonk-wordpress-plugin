@@ -578,31 +578,37 @@ function render_listmonk_optin_text($args) {
 
 function render_text_field($args){
     $field_type = 'text';
+    $autocomplete = ''; // Autocomplete attribute
     $placeholder = ''; // Default placeholder text
     $help_text = ''; // Default help text
 
     // If the field is for the password
     if ($args['name'] == 'listmonk_password') {
         $field_type = 'password';
-        $option = get_option($args['name'], '');
-        
-        // Always use informative placeholder text and help text for the password field
-        $placeholder = 'placeholder="Enter new password to change"';
-        $help_text = '<p class="description">Leave blank to keep the current password.</p>';
+        $autocomplete = 'autocomplete="new-password"'; // Set autocomplete attribute for password field
+        $placeholder = 'placeholder="Enter new password to change"'; // Informative placeholder text for the password field
+        $help_text = '<p class="description">Leave blank to keep the current password.</p>'; // Help text for the password field
+    } else if ($args['name'] == 'listmonk_username') {
+        $autocomplete = 'autocomplete="username"'; // Set autocomplete attribute for username field
+        $option = get_option($args['name'], ''); // Get the option value for other fields
     } else {
-        $option = get_option($args['name'], '');
+        $option = get_option($args['name'], ''); // Get the option value for other fields
     }
 
+    // Print the input field
     printf(
-        '<input class="listmonk-text-input" type="%s" id="%s" name="%s" value="%s" %s />%s', // The %s placeholders are replaced with the values in the following order
-        esc_attr($field_type),
-        esc_attr($args['name']),
-        esc_attr($args['name']),
-        esc_attr($field_type == 'password' ? '' : $option), // If the field is for the password, don't show the current password
-        $placeholder,
-        $help_text
+        '<input class="listmonk-text-input" type="%s" id="%s" name="%s" value="%s" %s %s />%s', // The placeholders are replaced with the specified values
+        esc_attr($field_type), // Field type (text or password)
+        esc_attr($args['name']), // Field ID
+        esc_attr($args['name']), // Field name
+        esc_attr($field_type == 'password' ? '' : $option), // Field value, empty for password fields
+        $placeholder, // Placeholder text
+        $autocomplete, // Autocomplete attribute
+        $help_text // Help text
     );
 }
+
+
 
 function render_checkbox_field($args){ // Function to render checkbox field
     $value = get_option($args['name']); // Get the current value of the option
