@@ -12,6 +12,10 @@ License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly
+}
+
 // check if WooCommerce checkout block is active
 function listmonk_is_checkout_block_enabled() {
     $checkout_page_id = wc_get_page_id('checkout');
