@@ -19,7 +19,7 @@ Using listmonk as an open source newsletter and mailing tool, makes you (1) less
 This plugin uses the well-documented listmonk API to send data from your WordPress server to the listmonk server over HTTPS.
 
 ## Requirements
-- A listmonk server accessible over HTTPS;
+- A listmonk server accessible over HTTPS; (tested with listmonk v2.5.1)
 - The server WordPress is running on should have cURL enabled;
 - For using this plugin with a form that people can fill in to subscribe to your mailing list, you should have the free WPForms plugin installed and choose their standard newsletter form. Input that form ID in the settings page of this plugin 
 - For using this plugin to let customers customers to your mailing list in WooCommerce checkout, on the settings page you can add custom text to be shown next to the checkbox. When they check that box, their email address and name will be sent to your listmonk server. You can use other plugins to add custom checkout fields. 
