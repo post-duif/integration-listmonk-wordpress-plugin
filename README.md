@@ -9,7 +9,7 @@ Using listmonk as an open source newsletter and mailing tool, makes you (1) less
 1. Download the plugin and upload the folder to you WordPress plugin directory. Plugin will be available through the WordPress plugin search function later as it is pending approval. 
 2. Make sure you have access to a configured listmonk server. You can connect listmonk to email services like Amazon SES, costing you as little as 0.1$ per thousand emails.
 3. Use either WPForms or a custom field on the WooCommerce checkout page to send subscriber data to listmonk. You can add the checkout field with this plugin if you use the classic WooCommerce checkout. WooCommerce block based checkout is not yet supported.
-4. Figure out the _listmonk list ID_ that you want to use to subscribe everyone to. See listmonk documentation for more details.
+4. Figure out the _listmonk list ID_ that you want people to subscribe to. See [listmonk documentation](https://listmonk.app/docs/) for more details.
 5. Open the settings page of this plugin from your WordPress admin dashboard under Settings. Enter your the listmonk list ID, listmonk server url, username and password. You can also enable and disable the WooCommerce and WPForms components. 
 <img width="1296" alt="Screenshot 2024-01-14 at 02 53 00" src="https://github.com/post-duif/integration-listmonk-wordpress-plugin/assets/126626953/e7baa929-824d-4699-8fe0-9e7125382862">
 
