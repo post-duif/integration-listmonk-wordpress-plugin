@@ -8,7 +8,7 @@ Using listmonk as an open source newsletter and mailing tool, makes you (1) less
 
 1. Download the plugin and upload the folder to you WordPress plugin directory. Plugin will be available through the WordPress plugin search function later as it is pending approval. 
 2. Make sure you have access to a configured listmonk server. You can connect listmonk to email services like Amazon SES, costing you as little as 0.1$ per thousand emails.
-3. Use either WPForms or the WooCommerce checkout to send subscriber data to listmonk. If you want to use the WooCommerce checkout to automatically subscribe customers to your mailing lists, you should have a custom fields plugin installed.
+3. Use either WPForms or a custom field on the WooCommerce checkout page to send subscriber data to listmonk. You can add the checkout field with this plugin if you use the classic WooCommerce checkout. WooCommerce block based checkout is not yet supported.
 4. Figure out the _listmonk list ID_ that you want to use to subscribe everyone to. See listmonk documentation for more details.
 5. Open the settings page of this plugin from your WordPress admin dashboard under Settings. Enter your the listmonk list ID, listmonk server url, username and password. You can also enable and disable the WooCommerce and WPForms components. 
 <img width="1279" alt="Screenshot 2024-01-13 at 03 58 42" src="https://github.com/post-duif/listmonk-WooCommerce-plugin/assets/126626953/5383d893-8963-41ed-9cc6-dc767782c2e7">
@@ -20,8 +20,7 @@ This plugin uses the well-documented listmonk API to send data from your WordPre
 - A listmonk server accessible over HTTPS;
 - The server WordPress is running on should have cURL enabled;
 - For using this plugin with a form that people can fill in to subscribe to your mailing list, you should have the free WPForms plugin installed and choose their standard newsletter form. Input that form ID in the settings page of this plugin 
-- For using this plugin to let customers customers to your mailing list in WooCommerce checkout, you should make sure you add a checkbox named "newsletter 
-_option". When they check that box, their email address and name will be sent to your listmonk server. You can use other plugins to add custom checkout fields. 
+- For using this plugin to let customers customers to your mailing list in WooCommerce checkout, on the settings page you can add custom text to be shown next to the checkbox. When they check that box, their email address and name will be sent to your listmonk server. You can use other plugins to add custom checkout fields. 
 
 ## Future plans 
 I plan to include an option to add a custom checkout field to this plugin, which would remove the need for installing another plugin to create a custom checkout field named "newsletter_optin". 
