@@ -11,7 +11,9 @@ Using listmonk as an open source newsletter and mailing tool, makes you (1) less
 3. Use either WPForms or a custom field on the WooCommerce checkout page to send subscriber data to listmonk. You can add the checkout field with this plugin if you use the classic WooCommerce checkout. WooCommerce block based checkout is not yet supported.
 4. Figure out the _listmonk list ID_ that you want to use to subscribe everyone to. See listmonk documentation for more details.
 5. Open the settings page of this plugin from your WordPress admin dashboard under Settings. Enter your the listmonk list ID, listmonk server url, username and password. You can also enable and disable the WooCommerce and WPForms components. 
-<img width="1297" alt="Screenshot 2024-01-14 at 02 46 31" src="https://github.com/post-duif/integration-listmonk-wordpress-plugin/assets/126626953/ad56d71d-b060-44b9-9ca5-9f3c4d1eba2f">
+<img width="1296" alt="Screenshot 2024-01-14 at 02 53 00" src="https://github.com/post-duif/integration-listmonk-wordpress-plugin/assets/126626953/e7baa929-824d-4699-8fe0-9e7125382862">
+
+
 
 ## How does the plugin work?
 This plugin uses the well-documented listmonk API to send data from your WordPress server to the listmonk server over HTTPS.
@@ -21,9 +23,6 @@ This plugin uses the well-documented listmonk API to send data from your WordPre
 - The server WordPress is running on should have cURL enabled;
 - For using this plugin with a form that people can fill in to subscribe to your mailing list, you should have the free WPForms plugin installed and choose their standard newsletter form. Input that form ID in the settings page of this plugin 
 - For using this plugin to let customers customers to your mailing list in WooCommerce checkout, on the settings page you can add custom text to be shown next to the checkbox. When they check that box, their email address and name will be sent to your listmonk server. You can use other plugins to add custom checkout fields. 
-
-## Future plans 
-I plan to include an option to add a custom checkout field to this plugin, which would remove the need for installing another plugin to create a custom checkout field named "newsletter_optin". 
 
 ## What about privacy?
 For each user that subscribes to a mailing list, their IP address and is recorded as well as a timestamp of subscription time. For subscribers through the WooCommerce checkout, there is no double opt-in, but for people subscribing through a form there is a double opt-in. When people subscribe through WooCommerce checkout, their country is also saved to listmonk. 
