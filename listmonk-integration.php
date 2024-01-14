@@ -237,7 +237,7 @@ function sub_newsletter_after_order( $order_id ){
     // check for user newsletter consent
     $field_name = 'newsletter_optin'; // change this field to the name of your custom field for storing user consent in a checkbox
     $consent = $order->get_meta($field_name); // get user consent from custom field
-    if($consent != 'true'){ // if user did not give consent, return
+    if ($consent != 'true' && $consent != '1') { // if user did not give consent, return
         return;
     }
     
@@ -326,7 +326,7 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
         </div>
             <!-- "Buy Me a Coffee" button -->
     <div style="margin-top: 20px; transform: scale(0.8); transform-origin: top left;">
-        <p><em>Enjoying this free & open source plugin?</em></p><script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="woutern" data-color="#FFDD00" data-emoji="" data-font="Poppins" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
+        <p><em>Enjoying this free & open source plugin?</em></p><a href="https://www.buymeacoffee.com/postduif" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
     </div>
     <?php
 }
