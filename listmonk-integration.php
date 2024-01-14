@@ -331,26 +331,18 @@ function sanitize_checkbox($input){
     return 'on' === $input ? 'yes' : 'no'; // Return 'yes' if the checkbox is checked, otherwise return 'no'
 }
 
-function sanitize_listmonk_url($input){
-    // Log the input URL
-    error_log('sanitize_listmonk_url - Input URL: ' . $input);
-
+function sanitize_listmonk_url($input){ // Function to sanitize the listmonk URL
     // Trim whitespace
     $url = trim($input);
 
-    // Log the trimmed URL
-    error_log('sanitize_listmonk_url - Trimmed URL: ' . $url);
-
     // Check if the URL is empty
     if (empty($url)) {
-        error_log('sanitize_listmonk_url - URL is empty after trim');
         return '';
     }
 
     // Check if "https://" is missing, prepend it if necessary
-    if (substr($url, 0, 8) !== "https://" && substr($url, 0, 7) !== "http://") {
+    if (substr($url, 0, 8) !== "https://" && substr($url, 0, 7) !== "http://") { // Check if the URL starts with "https://" or "http://"
         $url = "https://" . $url;
-        error_log('sanitize_listmonk_url - Prepended https:// to URL: ' . $url);
     }
 
     // Remove a trailing slash if present
@@ -360,7 +352,6 @@ function sanitize_listmonk_url($input){
 
     // Validate the URL
     if (filter_var($url, FILTER_VALIDATE_URL) === FALSE) {
-        error_log('sanitize_listmonk_url - URL validation failed: ' . $url);
         add_settings_error(
             'listmonk_url', 
             'invalid_url', 
@@ -378,9 +369,7 @@ function sanitize_listmonk_url($input){
         );
         return get_option('listmonk_url'); // Return the previous value
     }
-
-    error_log('sanitize_listmonk_url - URL validation passed: ' . $url); // Log the validated URL
-    return $url;
+    return $url; // Return the sanitized URL
 }
 
 // Sanitize and validate the list ID
