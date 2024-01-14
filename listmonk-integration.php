@@ -43,7 +43,7 @@ function listmonk_uninstall() {
 
 // start of the code to add newsletter checkbox to checkout
 
-function initialize_listmonk_integration() {
+function listmonk_initialize_listmonk_integration() {
     if (get_option('listmonk_checkout_on') !== 'yes') {
         return;
     }
@@ -53,7 +53,7 @@ function initialize_listmonk_integration() {
     add_action('woocommerce_admin_order_data_after_billing_address', 'listmonk_display_newsletter_subscription_in_admin_order_meta', 10, 1); // display newsletter checkbox value in admin order meta
 }
 // initialize the listmonk integration
-add_action('wp_loaded', 'initialize_listmonk_integration');
+add_action('wp_loaded', 'listmonk_initialize_listmonk_integration');
 
 // add newsletter checkbox to checkout
 function listmonk_add_newsletter_checkbox_to_checkout($fields) {
@@ -104,7 +104,7 @@ function listmonk_display_newsletter_subscription_in_admin_order_meta($order) {
 require_once plugin_dir_path( __FILE__ ) . 'fsd-data-encryption.php';
 
 ## get user ip
-function get_the_user_ip() {
+function listmonk_get_the_user_ip() {
     if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
     //check ip from share internet
     $ip = $_SERVER['HTTP_CLIENT_IP'];
@@ -118,7 +118,7 @@ function get_the_user_ip() {
 }
 
 // check if listmonk credentials are configured
-function are_listmonk_settings_configured() {
+function listmonk_are_listmonk_settings_configured() {
     $listmonk_url = get_option('listmonk_url'); // get listmonk url from settings page
     $listmonk_username = get_option('listmonk_username'); // get listmonk username from settings page
     $listmonk_password = get_option('listmonk_password'); // get listmonk password from settings page
@@ -127,7 +127,7 @@ function are_listmonk_settings_configured() {
 }
 
 ## function to send data to listmonk through cURL
-function send_data_to_listmonk($url, $body, $username, $password) {
+function listmonk_send_data_to_listmonk($url, $body, $username, $password) {
     // Create a new cURL resource
 
     $ch = curl_init($url);
@@ -154,8 +154,8 @@ function send_data_to_listmonk($url, $body, $username, $password) {
 
 // this function sends WPforms data to an external API (listmonk) through https
 
-function wpf_dev_process_complete( $fields, $entry, $form_data, $entry_id ) {
-    if (!are_listmonk_settings_configured()) {
+function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry_id ) {
+    if (!listmonk_are_listmonk_settings_configured()) {
         return; // Abort if settings are not configured
     }
     $listmonk_wpforms_form_id = absint(get_option('listmonk_wpforms_form_id')); // convert form id from option to integer
@@ -167,7 +167,7 @@ function wpf_dev_process_complete( $fields, $entry, $form_data, $entry_id ) {
     }
 
     // define variables
-    $ip = get_the_user_ip(); // define ip address of user, used for listmonk consent recording
+    $ip = listmonk_get_the_user_ip(); // define ip address of user, used for listmonk consent recording
     $website_name = get_bloginfo( 'name' ); // Retrieves the website's name from the WordPress database
     $listmonk_list_id = get_option('listmonk_list_id', 0); // get listmonk list id from settings page
 
@@ -211,15 +211,15 @@ function wpf_dev_process_complete( $fields, $entry, $form_data, $entry_id ) {
     $url = $listmonk_url . '/api/subscribers';    
     
     // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through cURL
-    send_data_to_listmonk($url, $body, $listmonk_username, $listmonk_password);
+    listmonk_send_data_to_listmonk($url, $body, $listmonk_username, $listmonk_password);
 
 }
-add_action( 'wpforms_process_complete', 'wpf_dev_process_complete', 10, 4 );
+add_action( 'wpforms_process_complete', 'listmonk_send_data_through_wpforms', 10, 4 );
 
 ## send subscriber data to listmonk after paying 
 
-add_action( 'woocommerce_thankyou', 'sub_newsletter_after_order', 10, 1 );
-function sub_newsletter_after_order( $order_id ){
+add_action( 'woocommerce_thankyou', 'listmonk_send_data_afer_checkout', 10, 1 );
+function listmonk_send_data_afer_checkout( $order_id ){
     // check ff the listmonk checkout component is enabled in settings
     if (get_option('listmonk_checkout_on') != 'yes') { 
         return;
@@ -228,7 +228,7 @@ function sub_newsletter_after_order( $order_id ){
         return;
     }
 
-    if (!are_listmonk_settings_configured()) {
+    if (!listmonk_are_listmonk_settings_configured()) {
         return; // Abort if settings are not configured
     }
 
@@ -283,7 +283,7 @@ function sub_newsletter_after_order( $order_id ){
     $url = $listmonk_url . '/api/subscribers';
 
     // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through cURL
-    send_data_to_listmonk($url, $body, $listmonk_username, $listmonk_password);
+    listmonk_send_data_to_listmonk($url, $body, $listmonk_username, $listmonk_password);
 }
 
 ### SETTINGS PAGE ###
@@ -339,7 +339,7 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
 }
 
 // is inputted url actually reachable?
-function is_url_reachable($url){
+function listmonk_is_url_reachable($url){
     // Use cURL to attempt to connect to the URL
     $handle = curl_init($url);
     curl_setopt($handle,  CURLOPT_RETURNTRANSFER, TRUE);
@@ -359,11 +359,11 @@ function is_url_reachable($url){
 }
 
 // Sanitize checkbox input
-function sanitize_checkbox($input){
+function listmonk_sanitize_checkbox($input){
     return 'on' === $input ? 'yes' : 'no'; // Return 'yes' if the checkbox is checked, otherwise return 'no'
 }
 
-function sanitize_listmonk_url($input){ // Function to sanitize the listmonk URL
+function listmonk_sanitize_listmonk_url($input){ // Function to sanitize the listmonk URL
     // Trim whitespace
     $url = trim($input);
 
@@ -394,7 +394,7 @@ function sanitize_listmonk_url($input){ // Function to sanitize the listmonk URL
 
     // Check if the URL is reachable
     if (function_exists('curl_init')) {
-        if (!is_url_reachable($url)) {
+        if (!listmonk_is_url_reachable($url)) {
             add_settings_error(
                 'listmonk_url', 
                 'unreachable_url', 
@@ -414,7 +414,7 @@ function sanitize_listmonk_url($input){ // Function to sanitize the listmonk URL
 }
 
 // Sanitize and validate the list ID
-function sanitize_list_id($input){ // Function to sanitize the listmonk list ID
+function listmonk_sanitize_list_id($input){ // Function to sanitize the listmonk list ID
     $new_input = absint($input);
     if ($new_input < 0) {
         add_settings_error(
@@ -427,7 +427,7 @@ function sanitize_list_id($input){ // Function to sanitize the listmonk list ID
     return $new_input;
 }
 
-function sanitize_listmonk_password($input){ // Function to sanitize the listmonk password
+function listmonk_sanitize_listmonk_password($input){ // Function to sanitize the listmonk password
     if (empty($input)) {
         return get_option('listmonk_password');
     }
@@ -461,51 +461,51 @@ function listmonk_settings_fields(){
     );
 
     // Register and add settings fields
-    register_setting($option_group, 'listmonk_checkout_on', 'sanitize_checkbox');
+    register_setting($option_group, 'listmonk_checkout_on', 'listmonk_sanitize_checkbox');
     add_settings_field(
         'listmonk_checkout_on', // Field ID
         'Enable listmonk integration on WooCommerce Checkout:', // Field title
-        'render_checkbox_field', // Callback for field markup
+        'listmonk_render_checkbox_field', // Callback for field markup
         $page_slug, // Page slug
         'listmonk_plugin_components', // Section ID
         array('name' => 'listmonk_checkout_on') // Additional arguments for the callback function
     );
  // Register and add settings fields
-    register_setting($option_group, 'listmonk_form_on', 'sanitize_checkbox');
+    register_setting($option_group, 'listmonk_form_on', 'listmonk_sanitize_checkbox');
     add_settings_field(
         'listmonk_form_on',
         'Enable listmonk integration on a custom form using WPForms plugin:',
-        'render_checkbox_field',
+        'listmonk_render_checkbox_field',
         $page_slug,
         'listmonk_plugin_components',
         array('name' => 'listmonk_form_on')
     );
 // Register and add settings fields
-    register_setting($option_group, 'listmonk_wpforms_form_id', 'sanitize_list_id');
+    register_setting($option_group, 'listmonk_wpforms_form_id', 'listmonk_sanitize_list_id');
     add_settings_field(
         'listmonk_wpforms_form_id',
         'WPForms Form ID:',
-        'render_wpforms_form_id_field',
+        'listmonk_render_wpforms_form_id_field',
         $page_slug,
         'listmonk_plugin_components',
         array('name' => 'listmonk_wpforms_form_id')
     );
 // Register and add settings fields
-    register_setting($option_group, 'listmonk_list_id', 'sanitize_list_id');
+    register_setting($option_group, 'listmonk_list_id', 'listmonk_sanitize_list_id');
     add_settings_field(
         'listmonk_list_id',
         'listmonk list ID:',
-        'render_listmonk_list_id_field',
+        'listmonk_render_listmonk_list_id_field',
         $page_slug,
         'listmonk_credentials',
         array('name' => 'listmonk_list_id')
     );
 // Register and add settings fields
-    register_setting($option_group, 'listmonk_url', 'sanitize_listmonk_url');
+    register_setting($option_group, 'listmonk_url', 'listmonk_sanitize_listmonk_url');
     add_settings_field(
         'listmonk_url',
         'listmonk URL:',
-        'render_text_field',
+        'listmonk_render_text_field',
         $page_slug,
         'listmonk_credentials',
         array('name' => 'listmonk_url')
@@ -515,17 +515,17 @@ function listmonk_settings_fields(){
     add_settings_field(
         'listmonk_username',
         'listmonk username:',
-        'render_text_field',
+        'listmonk_render_text_field',
         $page_slug,
         'listmonk_credentials',
         array('name' => 'listmonk_username')
     );
 // Register and add settings fields
-    register_setting($option_group, 'listmonk_password', 'sanitize_listmonk_password');
+    register_setting($option_group, 'listmonk_password', 'listmonk_sanitize_listmonk_password');
     add_settings_field(
         'listmonk_password',
         'listmonk password:',
-        'render_text_field',
+        'listmonk_render_text_field',
         $page_slug,
         'listmonk_credentials',
         array('name' => 'listmonk_password')
@@ -536,7 +536,7 @@ function listmonk_settings_fields(){
     add_settings_field(
         'listmonk_optin_text', // Field ID
         'WooCommerce checkout newsletter opt-in text:', // Field title
-        'render_listmonk_optin_text', // Callback for field markup
+        'listmonk_render_listmonk_optin_text', // Callback for field markup
         $page_slug, // Page slug
         'listmonk_plugin_components', // Section ID
         array('name' => 'listmonk_optin_text') // Additional arguments for the callback function
@@ -582,17 +582,17 @@ function listmonk_admin_styles($hook) {
     <?php
 }
 
-function render_listmonk_optin_text($args) {
+function listmonk_render_listmonk_optin_text($args) {
     $option_name = $args['name'];
     $value = get_option($option_name, 'Subscribe to our newsletter'); // Default value if option is not set
     $disabled = get_option('listmonk_checkout_on') !== 'yes' ? 'readonly' : '';
 
     echo '<input class="listmonk-text-input" type="text" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . $disabled . ' />';
-    echo '<p class="description">This text will be shown on the checkout page when listmonk integration is enabled.</p>';
+    echo '<p class="description">This text will be shown on the WooCommerce checkout page when listmonk integration is enabled.</p>';
 }
 
 
-function render_text_field($args){
+function listmonk_render_text_field($args){
     $field_type = 'text';
     $autocomplete = ''; // Autocomplete attribute
     $placeholder = ''; // Default placeholder text
@@ -626,11 +626,11 @@ function render_text_field($args){
 
 
 
-function render_checkbox_field($args){ // Function to render checkbox field
+function listmonk_render_checkbox_field($args){ // Function to render checkbox field
     $value = get_option($args['name']); // Get the current value of the option
     
     // Check if WPForms or any plugin with a name starting with "wpforms" is active
-    if ($args['name'] === 'listmonk_form_on' && !is_plugin_active_with_prefix('wpforms')) {
+    if ($args['name'] === 'listmonk_form_on' && !listmonk_is_plugin_active_with_prefix('wpforms')) {
         // WPForms or a matching plugin is not active and the field is "listmonk_form_on," disable the checkbox and set it as unchecked
         $disabled = 'disabled="disabled"';
         $checked = '';
@@ -677,7 +677,7 @@ function render_checkbox_field($args){ // Function to render checkbox field
     <?php
 }
 
-function is_plugin_active_with_prefix($prefix){ // Function to check if a plugin with a name starting with a prefix is active
+function listmonk_is_plugin_active_with_prefix($prefix){ // Function to check if a plugin with a name starting with a prefix is active
     $active_plugins = get_option('active_plugins'); // Get all active plugins
     
     foreach ($active_plugins as $plugin) { // Loop through all active plugins
@@ -690,7 +690,7 @@ function is_plugin_active_with_prefix($prefix){ // Function to check if a plugin
 }
 
 // Function to render WPForms Form ID field
-function render_wpforms_form_id_field($args) {
+function listmonk_render_wpforms_form_id_field($args) {
     $option_name = $args['name'];
     $value = get_option($option_name, ''); // Default value if option is not set
     $disabled = get_option('listmonk_form_on') !== 'yes' ? 'readonly' : '';
@@ -701,7 +701,7 @@ function render_wpforms_form_id_field($args) {
 
 
 // Function to render listmonk List ID field
-function render_listmonk_list_id_field($args) { // Function to render listmonk List ID field
+function listmonk_render_listmonk_list_id_field($args) { // Function to render listmonk List ID field
     $option = get_option($args['name'], '1'); // Default value is 1
 
     printf(
