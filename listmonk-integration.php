@@ -1,6 +1,7 @@
 <?php
 /*
 Plugin Name: Integration for listmonk mailing list and newsletter manager
+Text Domain: integration-listmonk
 Plugin URI: https://github.com/post-duif/listmonk-woocommerce-plugin
 Description: Connects the open source listmonk mailing list and newsletter service to WordPress and WooCommerce, so users can subscribe to your mailing lists through a form on your website or through WooCommerce checkout.
 Author: postduif
@@ -26,6 +27,63 @@ function listmonk_uninstall() {
     delete_option('listmonk_form_on');
     delete_option('listmonk_checkout_on');
 }
+
+
+// start of the code to add newsletter checkbox to checkout
+
+function initialize_listmonk_integration() {
+    if (get_option('listmonk_checkout_on') !== 'yes') {
+        return;
+    }
+
+    add_filter('woocommerce_checkout_fields', 'listmonk_add_newsletter_checkbox_to_checkout'); // add newsletter checkbox to checkout
+    add_action('woocommerce_checkout_update_order_meta', 'listmonk_save_newsletter_subscription_checkbox'); // save newsletter checkbox value to order meta
+    add_action('woocommerce_admin_order_data_after_billing_address', 'listmonk_display_newsletter_subscription_in_admin_order_meta', 10, 1); // display newsletter checkbox value in admin order meta
+}
+// initialize the listmonk integration
+add_action('wp_loaded', 'initialize_listmonk_integration');
+
+// add newsletter checkbox to checkout
+function listmonk_add_newsletter_checkbox_to_checkout($fields) {
+    $email_priority = isset($fields['billing']['billing_email']['priority']) ? $fields['billing']['billing_email']['priority'] : 20;
+    
+    // Retrieve the custom label text from the options, with a default value
+    $optin_label = get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-listmonk'));
+
+    // Check if $optin_label is empty, if so, use the default text
+    if (empty($optin_label)) {
+        $optin_label = __('Subscribe to our newsletter', 'integration-listmonk');
+    }
+    $fields['billing']['newsletter_optin'] = array(
+        'type'      => 'checkbox',
+        'label'     => $optin_label,  // Use the retrieved label text here
+        'required'  => false,
+        'class'     => array('form-row-wide'),
+        'clear'     => true,
+        'priority'  => $email_priority + 2, // Slightly higher priority than email
+    );
+
+    return $fields;
+}
+
+
+// save newsletter checkbox value to order meta
+function listmonk_save_newsletter_subscription_checkbox($order_id) {
+    $newsletter_optin = isset($_POST['newsletter_optin']) ? 'true' : 'false';
+
+    $order = wc_get_order($order_id);
+    $order->update_meta_data('newsletter_optin', $newsletter_optin);
+    $order->save();
+}
+
+// display newsletter checkbox value in admin order meta
+function listmonk_display_newsletter_subscription_in_admin_order_meta($order) {
+    $subscribed = $order->get_meta('newsletter_optin', true);
+    $display_value = ($subscribed === 'true') ? 'Yes' : 'No'; // Display 'Yes' for 'true', 'No' otherwise`
+    echo '<p><strong>' . __('Newsletter subscription (listmonk):', 'integration-listmonk') . '</strong> ' . $display_value . '</p>';
+}
+
+// end of the code to add newsletter checkbox to checkout
 
 // required for encrypting the listmonk password
 require_once plugin_dir_path( __FILE__ ) . 'fsd-data-encryption.php';
@@ -442,6 +500,17 @@ function listmonk_settings_fields(){
         'listmonk_credentials',
         array('name' => 'listmonk_password')
     );
+
+    // Register and add settings fields for extra textbox
+    register_setting($option_group, 'listmonk_optin_text', 'sanitize_text_field');
+    add_settings_field(
+        'listmonk_optin_text', // Field ID
+        'Newsletter subscription opt-in text:', // Field title
+        'render_listmonk_optin_text', // Callback for field markup
+        $page_slug, // Page slug
+        'listmonk_plugin_components', // Section ID
+        array('name' => 'listmonk_optin_text') // Additional arguments for the callback function
+    );
 }
 
 // Description for the 'Plugin Components' section
@@ -483,6 +552,16 @@ function listmonk_admin_styles($hook) {
     </style>
     <?php
 }
+
+function render_listmonk_optin_text($args) {
+    $option_name = $args['name'];
+    $value = get_option($option_name, 'Subscribe to our newsletter'); // Default value if option is not set
+    $disabled = get_option('listmonk_checkout_on') !== 'yes' ? 'readonly' : '';
+
+    echo '<input class="listmonk-text-input" type="text" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . $disabled . ' />';
+    echo '<p class="description">This text will be shown on the checkout page when listmonk integration is enabled.</p>';
+}
+
 
 function render_text_field($args){
     $field_type = 'text';
@@ -539,22 +618,30 @@ function render_checkbox_field($args){ // Function to render checkbox field
     // Include JavaScript for dynamic toggling
     ?>
     <script type="text/javascript">
-        jQuery(document).ready(function($) {
-            $('#<?php echo esc_attr($args['name']); ?>').change(function() {
-                var isChecked = $(this).is(':checked');
-                console.log('Checkbox changed: ', isChecked);
+    jQuery(document).ready(function($) {
+        $('#listmonk_form_on').change(function() {
+            var isFormEnabled = $(this).is(':checked');
+            $('#listmonk_wpforms_form_id').prop('readonly', !isFormEnabled);
+        }).change(); // Initialize on page load
+    });
+    jQuery(document).ready(function($) {
+        // Function to visually toggle textbox state
+        function toggleTextboxState(isEnabled) {
+            $('#listmonk_optin_text').prop('readonly', !isEnabled).toggleClass('disabled-textbox', !isEnabled);
+        }
 
-                // Explicitly targeting the WPForms Form ID field
-                if (isChecked) {
-                    $('#listmonk_wpforms_form_id').removeAttr('disabled');
-                } else {
-                    $('#listmonk_wpforms_form_id').attr('disabled', 'disabled');
-                }
-            }).change(); // Trigger change to set initial state
-        });
+        // Event handler for checkbox change
+        $('#listmonk_checkout_on').change(function() {
+            toggleTextboxState($(this).is(':checked'));
+        }).change(); // Initialize on page load
+    });
     </script>
+
+
+
     <?php
 }
+
 function is_plugin_active_with_prefix($prefix){ // Function to check if a plugin with a name starting with a prefix is active
     $active_plugins = get_option('active_plugins'); // Get all active plugins
     
@@ -569,15 +656,14 @@ function is_plugin_active_with_prefix($prefix){ // Function to check if a plugin
 
 // Function to render WPForms Form ID field
 function render_wpforms_form_id_field($args) {
-    $disabled = get_option('listmonk_form_on') !== 'yes' ? 'disabled' : ''; // Disable the field if the listmonk form option is disabled
+    $option_name = $args['name'];
+    $value = get_option($option_name, ''); // Default value if option is not set
+    $disabled = get_option('listmonk_form_on') !== 'yes' ? 'readonly' : '';
 
-    printf(
-        '<input class="listmonk-number-input" type="number" id="listmonk_wpforms_form_id" name="%s" value="%d" %s />', // The %s placeholders are replaced with the values in the following order
-        esc_attr($args['name']),
-        esc_attr($option),
-        $disabled
-    );
+    echo '<input class="listmonk-number-input" type="number" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . $disabled . ' />';
+    echo '<p class="description">Enter the WPForms Form ID here. This ID is used when listmonk integration with WPForms is enabled.</p>';
 }
+
 
 // Function to render listmonk List ID field
 function render_listmonk_list_id_field($args) { // Function to render listmonk List ID field
