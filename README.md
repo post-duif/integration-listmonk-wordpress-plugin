@@ -14,9 +14,15 @@ Using listmonk as an open source newsletter and mailing tool, makes you (1) less
 <img width="1296" alt="Screenshot 2024-01-14 at 02 53 00" src="https://github.com/post-duif/integration-listmonk-wordpress-plugin/assets/126626953/e7baa929-824d-4699-8fe0-9e7125382862">
 
 
-
 ## How does the plugin work?
 This plugin uses the well-documented listmonk API to send data from your WordPress server to the listmonk server over HTTPS.
+
+Customers can tick a checkbox on the WooCommerce checkout page to subscribe to your newsletter:
+![image](https://github.com/post-duif/integration-listmonk-wordpress-plugin/assets/126626953/21bed5de-445b-4a48-9498-6a65fc6d6a97)
+
+Or you can use a newsletter form created by the free third-party plugin WPForms:
+![image](https://github.com/post-duif/integration-listmonk-wordpress-plugin/assets/126626953/bf17ae67-8617-4650-a5ed-d61901999d3c)
+
 
 ## Requirements
 - A listmonk server accessible over HTTPS; (tested with listmonk v2.5.1)
