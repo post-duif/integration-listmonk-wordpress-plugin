@@ -99,7 +99,7 @@ function listmonk_save_newsletter_subscription_checkbox($order_id) {
 function listmonk_display_newsletter_subscription_in_admin_order_meta($order) {
     $subscribed = $order->get_meta('newsletter_optin', true);
     $display_value = ($subscribed === 'true') ? 'Yes' : 'No'; // Display 'Yes' for 'true', 'No' otherwise`
-    echo '<p><strong>' . __('Newsletter subscription (listmonk):', 'integration-listmonk') . '</strong> ' . $display_value . '</p>';
+    echo '<p><strong>' . __('Newsletter subscription consent (listmonk):', 'integration-listmonk') . '</strong> ' . $display_value . '</p>';
 }
 
 // end of the code to add newsletter checkbox to checkout
@@ -191,9 +191,14 @@ function listmonk_send_data_to_listmonk($url, $body, $username, $password) {
             }
     }
 
+    $response = [
+        'status_code' => $httpCode,
+        'body' => json_decode($result, true)
+    ];
+
     curl_close($ch);
 
-    return $result;
+    return $response;
 }
 
 // this function sends WPforms data to an external API (listmonk) through https
@@ -327,7 +332,14 @@ function listmonk_send_data_afer_checkout( $order_id ){
     $url = $listmonk_url . '/api/subscribers';
 
     // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through cURL
-    listmonk_send_data_to_listmonk($url, $body, $listmonk_username, $listmonk_password);
+
+    $response = listmonk_send_data_to_listmonk($url, $body, $listmonk_username, $listmonk_password);
+
+    if ($response['status_code'] == 200) {
+        $order->add_order_note('Customer subscribed to listmonk mailing list (ID = ' . $listmonk_list_id . ').');
+    }elseif($response['status_code'] == 409) {
+        $order->add_order_note('Email address already exists in listmonk mailing list ' . $listmonk_list_id . ', customer had already subscribed.');
+    }
 }
 
 ### SETTINGS PAGE ###
