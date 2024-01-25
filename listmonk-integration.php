@@ -147,11 +147,51 @@ function listmonk_send_data_to_listmonk($url, $body, $username, $password) {
 
     // Execute the POST request
     $result = curl_exec($ch);
-    if(curl_errno($ch)) {
-        error_log('cURL error: ' . curl_error($ch)); // log curl error
+    
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE); // Get HTTP response code
+    // Handling different HTTP error codes
+    switch ($httpCode) {
+        case 400:
+            error_log('Listmonk API error: Missing or bad request parameters or values');
+            break;
+        case 403:
+            error_log('Listmonk API error: Session expired or invalidate. Must relogin');
+            break;
+        case 404:
+            error_log('Listmonk API error: Request resource was not found');
+            break;
+        case 405:
+            error_log('Listmonk API error: Request method is not allowed on the requested endpoint');
+            break;
+        case 410:
+            error_log('Listmonk API error: The requested resource is gone permanently');
+            break;
+        case 429:
+            error_log('Listmonk API error: Too many requests to the API (rate limiting)');
+            break;
+        case 500:
+            error_log('Listmonk API error: Something unexpected went wrong');
+            break;
+        case 502:
+            error_log('Listmonk API error: The backend OMS is down and the API is unable to communicate with it');
+            break;
+        case 503:
+            error_log('Listmonk API error: Service unavailable; the API is down');
+            break;
+        case 504:
+            error_log('Listmonk API error: Gateway timeout; the API is unreachable');
+            break;
+        default:
+            if ($httpCode >= 400) {
+                // Generic error for other 4xx and 5xx HTTP codes
+                error_log("Listmonk API error (HTTP code $httpCode): " . json_decode($result)->message);
+            } elseif (curl_errno($ch)) {
+                // Log cURL error if any
+                error_log('cURL error: ' . curl_error($ch));
+            }
     }
 
-    curl_close($ch); // Close cURL resource
+    curl_close($ch);
 
     return $result;
 }
