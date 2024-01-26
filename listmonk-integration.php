@@ -67,7 +67,7 @@ function listmonk_add_newsletter_checkbox_to_checkout($fields) {
     $email_priority = isset($fields['billing']['billing_email']['priority']) ? $fields['billing']['billing_email']['priority'] : 20;
     
     // Retrieve the custom label text from the options, with a default value
-    $optin_label = get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-listmonk'));
+    $optin_label = esc_html(get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-listmonk')));
 
     // Check if $optin_label is empty, if so, use the default text
     if (empty($optin_label)) {
@@ -111,27 +111,30 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/fsd-data-encryption.php';
 function listmonk_get_the_user_ip() {
     if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
     //check ip from share internet
-    $ip = $_SERVER['HTTP_CLIENT_IP'];
+    $ip = sanitize_text_field($_SERVER['HTTP_CLIENT_IP']);
     } elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
     //to check ip is passed from proxy
-    $ip = $_SERVER['HTTP_X_FORWARDED_FOR']; // get ip address of user
+    $ip = sanitize_text_field($_SERVER['HTTP_X_FORWARDED_FOR']); // get ip address of user
     } else {
-    $ip = $_SERVER['REMOTE_ADDR']; // get ip address of user
+    $ip = sanitize_text_field($_SERVER['REMOTE_ADDR']); // get ip address of user
     }
     return ($ip); // return ip address
 }
 
 // check if listmonk credentials are configured
 function listmonk_are_listmonk_settings_configured() {
-    $listmonk_url = get_option('listmonk_url'); // get listmonk url from settings page
-    $listmonk_username = get_option('listmonk_username'); // get listmonk username from settings page
-    $listmonk_password = get_option('listmonk_password'); // get listmonk password from settings page
+    $listmonk_url = sanitize_text_field(get_option('listmonk_url')); // get listmonk url from settings page
+    $listmonk_username = sanitize_text_field(get_option('listmonk_username')); // get listmonk username from settings page
+    $listmonk_password = sanitize_text_field(get_option('listmonk_password')); // get listmonk password from settings page
 
     return !empty($listmonk_url) && !empty($listmonk_username) && !empty($listmonk_password); // return true if all settings are configured
 }
 
 ## function to send data to listmonk through cURL
 function listmonk_send_data_to_listmonk($url, $body, $username, $password) {
+    // Sanitize the URL
+    $url = esc_url_raw($url);
+    
     // Create a new cURL resource
 
     $ch = curl_init($url);
@@ -208,7 +211,7 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
         return; // Abort if settings are not configured
     }
     $listmonk_wpforms_form_id = absint(get_option('listmonk_wpforms_form_id')); // convert form id from option to integer
-    $listmonk_form_on = get_option('listmonk_form_on'); // check if the listmonk form option is disabled in settings
+    $listmonk_form_on = sanitize_text_field(get_option('listmonk_form_on')); // check if the listmonk form option is disabled in settings
 
     // check if the form id matches the form id from the settings page and if the listmonk form option is enabled
     if (get_option('listmonk_form_on') != 'yes' || absint($form_data['id']) !== $listmonk_wpforms_form_id) { 
@@ -217,8 +220,8 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
 
     // define variables
     $ip = listmonk_get_the_user_ip(); // define ip address of user, used for listmonk consent recording
-    $website_name = get_bloginfo( 'name' ); // Retrieves the website's name from the WordPress database
-    $listmonk_list_id = get_option('listmonk_list_id', 0); // get listmonk list id from settings page
+    $website_name = sanitize_text_field(get_bloginfo( 'name' )); // Retrieves the website's name from the WordPress database
+    $listmonk_list_id = absint(get_option('listmonk_list_id', 0)); // get listmonk list id from settings page
 
     //these attributes are used by listmonk as extra data for each subscriber. can be changed to your liking
     $attributes = [
@@ -233,14 +236,14 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
     $replacement = '[removed]';
 
     // sanitize name input
-    $name = strip_tags($fields['1']['value']); // get name from form; this assumes it is the first field in the form
+    $name = sanitize_text_field(strip_tags($fields['1']['value'])); // get name from form; this assumes it is the first field in the form
     $name_email_stripped = preg_replace($pattern, $replacement, $name); // remove email from name field input
     $name_stripped_all = preg_replace('/[a-zA-Z]*[:\/\/]*[A-Za-z0-9\-_]+\.+[A-Za-z0-9\.\/%&=\?\-_]+/i', $replacement, $name_email_stripped); // remove urls from name field input
 
     // this body will be sent to listmonk 
     $body = array(
 		'name' => $name_stripped_all, // get name from form
-		'email' => $fields['2']['value'], // get email from form, this assumes it is the second field in the form
+		'email' => sanitize_email($fields['2']['value']), // get email from form, this assumes it is the second field in the form
         'status' => 'enabled', // set to enabled to subscribe user
         'lists' => [(int)$listmonk_list_id], // convert list id to integer
         'preconfirm_subscriptions' => false, // set to true if you want to send a confirmation email to the user
@@ -248,12 +251,12 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
 	);
 
     #listmonk credentials
-    $listmonk_url = get_option('listmonk_url');
-    $listmonk_username = get_option('listmonk_username');
+    $listmonk_url = esc_url_raw(get_option('listmonk_url'));
+    $listmonk_username = sanitize_text_field(get_option('listmonk_username'));
 
     ## password decryption
     $encryption = new FSD_Data_Encryption();
-    $encrypted_password = get_option('listmonk_password');
+    $encrypted_password = sanitize_text_field(get_option('listmonk_password'));
     $listmonk_password = $encryption->decrypt($encrypted_password);
 
     // append the url from the settings page with the correct API endpoint
@@ -281,7 +284,7 @@ function listmonk_send_data_afer_checkout( $order_id ){
         return; // Abort if settings are not configured
     }
 
-    $order = wc_get_order( $order_id ); // Get an instance of the WC_Order Object
+    $order = wc_get_order( absint($order_id) ); // Get an instance of the WC_Order Object
 
     // check for user newsletter consent
     $field_name = 'newsletter_optin'; // change this field to the name of your custom field for storing user consent in a checkbox
@@ -291,13 +294,13 @@ function listmonk_send_data_afer_checkout( $order_id ){
     }
     
     // get user info from the woocommerce order API
-    $email = $order->get_billing_email(); // Get Customer billing email
-    $name = $order->get_billing_first_name(); // Get Customer billing first name
+    $email = sanitize_email($order->get_billing_email()); // Get Customer billing email
+    $name = sanitize_text_field($order->get_billing_first_name()); // Get Customer billing first name
     $country = $order->get_billing_country(); // Get Customer billing country
     $ip = $order->get_customer_ip_address(); // Get Customer ip address
-    $website_name = get_bloginfo( 'name' ); // Retrieves the website's name from the WordPress database
+    $website_name = sanitize_text_field(get_bloginfo( 'name' )); // Retrieves the website's name from the WordPress database
 
-    $listmonk_list_id = get_option('listmonk_list_id', 0); // get listmonk list id from settings page
+    $listmonk_list_id = absint(get_option('listmonk_list_id', 0)); // get listmonk list id from settings page
 
     ## for listmonk
     $attributes = [
@@ -320,12 +323,12 @@ function listmonk_send_data_afer_checkout( $order_id ){
      ) ;
 
     #listmonk credentials
-    $listmonk_url = get_option('listmonk_url');
-    $listmonk_username = get_option('listmonk_username');
+    $listmonk_url = esc_url_raw(get_option('listmonk_url'));
+    $listmonk_username = sanitize_text_field(get_option('listmonk_username'));
 
     ## password decryption using the fsd-data-encryption class
     $encryption = new FSD_Data_Encryption();
-    $encrypted_password = get_option('listmonk_password');
+    $encrypted_password = sanitize_text_field(get_option('listmonk_password'));
     $listmonk_password = $encryption->decrypt($encrypted_password);
     
     // append the url from the settings page
@@ -363,9 +366,9 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
     // Display warning if both conditions are met
     if (listmonk_is_checkout_block_enabled() && get_option('listmonk_checkout_on') == 'yes') {
         echo '<div class="notice notice-warning">';
-        echo '<p>The new <a href="https://woo.com/checkout-blocks/">WooCommerce checkout block</a> is enabled on your site. This means the listmonk integration that
+        echo '<p>The new <a href="' . esc_url('https://woo.com/checkout-blocks/') . '">WooCommerce checkout block</a> is enabled on your site. This means the listmonk integration that
         let\'s users subscribe to your newsletter from the checkout page will not work. Compatibility with the WooCommerce checkout block is being worked on.
-        If this integration is important to you, <a href="https://woo.com/document/cart-checkout-blocks-status/#section-7">consider switching back to the old WooCommerce checkout experience</a>.</p>';
+        If this integration is important to you, <a href="' . esc_url('https://woo.com/document/cart-checkout-blocks-status/#section-7') . '">consider switching back to the old WooCommerce checkout experience</a>.</p>';
         echo '</div>';
     }
 
@@ -396,6 +399,13 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
 
 // is inputted url actually reachable?
 function listmonk_is_url_reachable($url){
+
+    // Validate and sanitize the URL
+    if (filter_var($url, FILTER_VALIDATE_URL) === FALSE) {
+        return false;
+    }
+    $url = esc_url_raw($url);
+
     // Use cURL to attempt to connect to the URL
     $handle = curl_init($url);
     curl_setopt($handle,  CURLOPT_RETURNTRANSFER, TRUE);
@@ -647,7 +657,6 @@ function listmonk_render_listmonk_optin_text($args) {
     echo '<p class="description">This text will be shown on the WooCommerce checkout page when listmonk integration is enabled.</p>';
 }
 
-
 function listmonk_render_text_field($args){
     $field_type = 'text';
     $autocomplete = ''; // Autocomplete attribute
@@ -658,27 +667,30 @@ function listmonk_render_text_field($args){
     if ($args['name'] == 'listmonk_password') {
         $field_type = 'password';
         $autocomplete = 'autocomplete="new-password"'; // Set autocomplete attribute for password field
-        $placeholder = 'placeholder="Enter new password to change"'; // Informative placeholder text for the password field
+        $placeholder = 'Enter new password to change'; // Informative placeholder text for the password field
         $help_text = '<p class="description">Leave blank to keep the current password.</p>'; // Help text for the password field
     } else if ($args['name'] == 'listmonk_username') {
         $autocomplete = 'autocomplete="username"'; // Set autocomplete attribute for username field
-        $option = get_option($args['name'], ''); // Get the option value for other fields
-    } else {
-        $option = get_option($args['name'], ''); // Get the option value for other fields
     }
+    $option = get_option($args['name'], ''); // Get the option value for other fields
 
     // Print the input field
     printf(
-        '<input class="listmonk-text-input" type="%s" id="%s" name="%s" value="%s" %s %s />%s', // The placeholders are replaced with the specified values
+        '<input class="listmonk-text-input" type="%s" id="%s" name="%s" value="%s" %s %s />', // The placeholders are replaced with the specified values
         esc_attr($field_type), // Field type (text or password)
         esc_attr($args['name']), // Field ID
         esc_attr($args['name']), // Field name
         esc_attr($field_type == 'password' ? '' : $option), // Field value, empty for password fields
-        $placeholder, // Placeholder text
-        $autocomplete, // Autocomplete attribute
-        $help_text // Help text
+        esc_attr($placeholder), // Placeholder text
+        esc_attr($autocomplete) // Autocomplete attribute
     );
+
+    // Echo the help text
+    if (!empty($help_text)) {
+        echo $help_text; // Help text
+    }
 }
+
 
 
 
@@ -747,8 +759,8 @@ function listmonk_is_plugin_active_with_prefix($prefix){ // Function to check if
 
 // Function to render WPForms Form ID field
 function listmonk_render_wpforms_form_id_field($args) {
-    $option_name = $args['name'];
-    $value = get_option($option_name, ''); // Default value if option is not set
+    $option_name = esc_attr($args['name']);
+    $value = esc_attr(get_option($option_name, '')); // Default value if option is not set
     $disabled = get_option('listmonk_form_on') !== 'yes' ? 'readonly' : '';
 
     echo '<input class="listmonk-number-input" type="number" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . $disabled . ' />';
