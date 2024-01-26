@@ -398,31 +398,43 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
 }
 
 // is inputted url actually reachable?
-function listmonk_is_url_reachable($url){
-
+function listmonk_is_url_reachable($url) {
     // Validate and sanitize the URL
     if (filter_var($url, FILTER_VALIDATE_URL) === FALSE) {
+        error_log('Invalid URL in listmonk_is_url_reachable');
         return false;
     }
     $url = esc_url_raw($url);
 
-    // Use cURL to attempt to connect to the URL
-    $handle = curl_init($url);
-    curl_setopt($handle,  CURLOPT_RETURNTRANSFER, TRUE);
+    // Arguments for the request, including a User-Agent header
+    $args = array(
+        'timeout' => 5,
+        'headers' => array(
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+            )
+    );
+
+    // Use WordPress HTTP API to attempt to connect to the URL
+    $response = wp_remote_get($url, $args);
+
+    // Check for WP_Error
+    if (is_wp_error($response)) {
+        error_log('Error in listmonk_is_url_reachable: ' . $response->get_error_message());
+        return false;
+    }
 
     // Get the HTTP response code
-    $response = curl_exec($handle); // Execute cURL request
-    $httpCode = curl_getinfo($handle, CURLINFO_HTTP_CODE); // Get the HTTP response code
+    $httpCode = wp_remote_retrieve_response_code($response);
 
-    curl_close($handle); // Close cURL resource
-
-    // Check if the HTTP response code is 200 (OK)
-    if($httpCode == 200) {
+    // Check if the HTTP response code indicates success
+    if ($httpCode >= 200 && $httpCode < 300) {
         return true;
     } else {
+        error_log('HTTP request failed in listmonk_is_url_reachable: Status code ' . $httpCode);
         return false;
     }
 }
+
 
 // Sanitize checkbox input
 function listmonk_sanitize_checkbox($input){
@@ -459,6 +471,9 @@ function listmonk_sanitize_listmonk_url($input){ // Function to sanitize the lis
     }
 
     // Check if the URL is reachable
+
+    // Temporary disable url reachable check
+    /*
     if (function_exists('curl_init')) {
         if (!listmonk_is_url_reachable($url)) {
             add_settings_error(
@@ -475,7 +490,7 @@ function listmonk_sanitize_listmonk_url($input){ // Function to sanitize the lis
             'cURL is not enabled on this server. Please enable cURL to use the URL validation feature.' // Error message
         );
         return get_option('listmonk_url'); // Return the previous value
-    }
+    }*/
     return $url; // Return the sanitized URL
 }
 
