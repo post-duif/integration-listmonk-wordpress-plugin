@@ -130,28 +130,39 @@ function listmonk_are_listmonk_settings_configured() {
     return !empty($listmonk_url) && !empty($listmonk_username) && !empty($listmonk_password); // return true if all settings are configured
 }
 
-## function to send data to listmonk through cURL
-function listmonk_send_data_to_listmonk($url, $body, $username, $password) {
+## function to send data to listmonk through WordPress HTTP API
+function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $username, $password) {
     // Sanitize the URL
     $url = esc_url_raw($url);
-    
-    // Create a new cURL resource
 
-    $ch = curl_init($url);
+    // Prepare the headers
+    $headers = array(
+        'Authorization' => 'Basic ' . base64_encode($username . ':' . $password),
+        'Content-Type' => 'application/json',
+    );
 
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
-        'Content-Type: application/json',
-        'Authorization: Basic ' . base64_encode($username . ':' . $password)
-    ));
+    // Setup the body and headers
+    $args = array(
+        'body'    => json_encode($body),
+        'headers' => $headers,
+        'method'  => 'POST'
+    );
 
-    // Set the content type to application/json
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    // Make the request
+    $response = wp_remote_post($url, $args);
 
-    // Execute the POST request
-    $result = curl_exec($ch);
-    
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE); // Get HTTP response code
+    // Check for error in response
+    if (is_wp_error($response)) {
+        error_log('Listmonk API error: ' . $response->get_error_message());
+        return [
+            'status_code' => wp_remote_retrieve_response_code($response),
+            'body' => wp_remote_retrieve_body($response)
+        ];
+    }
+
+    $httpCode = wp_remote_retrieve_response_code($response);
+    $body = wp_remote_retrieve_body($response);
+
     // Handling different HTTP error codes
     switch ($httpCode) {
         case 400:
@@ -187,25 +198,17 @@ function listmonk_send_data_to_listmonk($url, $body, $username, $password) {
         default:
             if ($httpCode >= 400) {
                 // Generic error for other 4xx and 5xx HTTP codes
-                error_log("Listmonk API error (HTTP code $httpCode): " . json_decode($result)->message);
-            } elseif (curl_errno($ch)) {
-                // Log cURL error if any
-                error_log('cURL error: ' . curl_error($ch));
+                error_log("Listmonk API error (HTTP code $httpCode): " . json_decode($body)->message);
             }
     }
 
-    $response = [
+    return [
         'status_code' => $httpCode,
-        'body' => json_decode($result, true)
+        'body' => json_decode($body, true)
     ];
-
-    curl_close($ch);
-
-    return $response;
 }
 
 // this function sends WPforms data to an external API (listmonk) through https
-
 function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry_id ) {
     if (!listmonk_are_listmonk_settings_configured()) {
         return; // Abort if settings are not configured
@@ -262,8 +265,8 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
     // append the url from the settings page with the correct API endpoint
     $url = $listmonk_url . '/api/subscribers';    
     
-    // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through cURL
-    listmonk_send_data_to_listmonk($url, $body, $listmonk_username, $listmonk_password);
+    // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through WordPress HTTP API
+    listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $listmonk_username, $listmonk_password);
 
 }
 add_action( 'wpforms_process_complete', 'listmonk_send_data_through_wpforms', 10, 4 );
@@ -334,9 +337,9 @@ function listmonk_send_data_afer_checkout( $order_id ){
     // append the url from the settings page
     $url = $listmonk_url . '/api/subscribers';
 
-    // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through cURL
+    // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through WordPress HTTP API
 
-    $response = listmonk_send_data_to_listmonk($url, $body, $listmonk_username, $listmonk_password);
+    $response = listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $listmonk_username, $listmonk_password);
 
     if ($response['status_code'] == 200) {
         $order->add_order_note('Customer subscribed to listmonk mailing list (ID = ' . $listmonk_list_id . ').');
@@ -372,13 +375,6 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
         echo '</div>';
     }
 
-    if (!function_exists('curl_init')) {
-        // cURL is not enabled
-        echo '<div class="notice notice-warning">';
-        echo '<p>cURL is not enabled on your server. Listmonk integration is dependent on cURL, so this plugin will not work. Contact your server administrator to check if cURL can be enabled on your server.</p>';
-        echo '</div>';
-    }
-
     ?>
         <div class="wrap">
             <h1><?php echo get_admin_page_title(); ?></h1>
@@ -397,87 +393,55 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
     <?php
 }
 
-// is inputted url actually reachable?
-function listmonk_is_url_reachable($url){
-
-    // Validate and sanitize the URL
-    if (filter_var($url, FILTER_VALIDATE_URL) === FALSE) {
-        return false;
-    }
-    $url = esc_url_raw($url);
-
-    // Use cURL to attempt to connect to the URL
-    $handle = curl_init($url);
-    curl_setopt($handle,  CURLOPT_RETURNTRANSFER, TRUE);
-
-    // Get the HTTP response code
-    $response = curl_exec($handle); // Execute cURL request
-    $httpCode = curl_getinfo($handle, CURLINFO_HTTP_CODE); // Get the HTTP response code
-
-    curl_close($handle); // Close cURL resource
-
-    // Check if the HTTP response code is 200 (OK)
-    if($httpCode == 200) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
 // Sanitize checkbox input
 function listmonk_sanitize_checkbox($input){
     return 'on' === $input ? 'yes' : 'no'; // Return 'yes' if the checkbox is checked, otherwise return 'no'
 }
 
-function listmonk_sanitize_listmonk_url($input){ // Function to sanitize the listmonk URL
-    // Trim whitespace
+function listmonk_sanitize_listmonk_url($input) {
+    // Trim whitespace from the input
     $url = trim($input);
 
     // Check if the URL is empty
     if (empty($url)) {
-        return '';
-    }
-
-    // Check if "https://" is missing, prepend it if necessary
-    if (substr($url, 0, 8) !== "https://" && substr($url, 0, 7) !== "http://") { // Check if the URL starts with "https://" or "http://"
-        $url = "https://" . $url;
-    }
-
-    // Remove a trailing slash if present
-    if (substr($url, -1) == '/') {
-        $url = rtrim($url, '/');
-    }
-
-    // Validate the URL
-    if (filter_var($url, FILTER_VALIDATE_URL) === FALSE) {
         add_settings_error(
             'listmonk_url', 
-            'invalid_url', 
-            'Please enter a valid URL.' // Error message
+            'empty_url', 
+            'The URL field cannot be empty.' // Error message
         );
         return get_option('listmonk_url'); // Return the previous value
     }
 
-    // Check if the URL is reachable
-    if (function_exists('curl_init')) {
-        if (!listmonk_is_url_reachable($url)) {
+    // Check if "https://" or "http://" is missing, and if missing, check validity after prepending
+    if (!preg_match('~^(?:f|ht)tps?://~i', $url)) {
+        $prefixedUrl = "https://" . $url;
+        if (!filter_var($prefixedUrl, FILTER_VALIDATE_URL)) {
             add_settings_error(
                 'listmonk_url', 
-                'unreachable_url', 
-                'The URL you provided is not reachable, so it cannot be used to connect to a listmonk server. Maybe you made a typo?' // Error message
+                'invalid_url', 
+                'Please enter a valid URL.' // Error message
             );
             return get_option('listmonk_url'); // Return the previous value
         }
+        $url = $prefixedUrl;
     } else {
-        add_settings_error(
-            'listmonk_url', 
-            'curl_not_enabled', 
-            'cURL is not enabled on this server. Please enable cURL to use the URL validation feature.' // Error message
-        );
-        return get_option('listmonk_url'); // Return the previous value
+        // If it already has http or https, just validate it
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            add_settings_error(
+                'listmonk_url', 
+                'invalid_url', 
+                'Please enter a valid URL.' // Error message
+            );
+            return get_option('listmonk_url'); // Return the previous value
+        }
     }
+
+    // Remove a trailing slash if present
+    $url = rtrim($url, '/');
+
     return $url; // Return the sanitized URL
 }
+
 
 // Sanitize and validate the list ID
 function listmonk_sanitize_list_id($input){ // Function to sanitize the listmonk list ID
@@ -690,9 +654,6 @@ function listmonk_render_text_field($args){
         echo $help_text; // Help text
     }
 }
-
-
-
 
 function listmonk_render_checkbox_field($args){ // Function to render checkbox field
     $value = get_option($args['name']); // Get the current value of the option
