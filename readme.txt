@@ -33,7 +33,6 @@ This plugin uses the well-documented listmonk API to send data from your Wordpre
 - An accessible listmonk server
 - If you want to use it so people can subscribe to a mailing list during checkout, you need WooCommerce enabled. Currently only the classic WooCommerce checkout is supported; support for WooCommerce blocks will follow. 
 - If you want to use this plugin so people can fill in a form on your website to subscribe to you mailing list, you need to have the free [WPForms](https://wordpress.org/plugins/wpforms-lite/) plugin enabled. 
-- This plugin uses cURL to communicate with the Listmonk API. It needs to be enabled on your server.
 
 ## Is this plugin free?
 Yes, 100%!
@@ -87,4 +86,4 @@ I created this plugin in my free time. I may have time to help you, but no guara
 3. Newsletter subscription form example. Created with WPForms, data will be sent to your listmonk server.
 
 == Changelog ==
-0.3.1 - First version
+1.2.0 First public version on the WordPress plugin directory
