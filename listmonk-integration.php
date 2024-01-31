@@ -377,7 +377,7 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
 
     ?>
         <div class="wrap">
-            <h1><?php echo get_admin_page_title(); ?></h1>
+            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
             <form method="post" action="options.php">
                 <?php
                     settings_fields('listmonk_integration_settings');
@@ -673,7 +673,7 @@ function listmonk_render_checkbox_field($args){ // Function to render checkbox f
     
     ?>
     <label>
-        <input type="checkbox" name="<?php echo esc_attr($args['name']); ?>" <?php echo $checked; ?> <?php echo $disabled; ?> /> Yes
+        <input type="checkbox" name="<?php echo esc_attr($args['name']); ?>" <?php echo esc_attr($checked); ?> <?php echo esc_attr($disabled); ?> /> Yes
     </label>
     <?php
     if ($message) {
