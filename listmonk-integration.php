@@ -156,7 +156,9 @@ function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $usernam
         error_log('Listmonk API error: ' . $response->get_error_message());
         return [
             'status_code' => wp_remote_retrieve_response_code($response),
-            'body' => wp_remote_retrieve_body($response)
+            'body' => wp_remote_retrieve_body($response),
+            'error_message' => 'Listmonk API error: ' . $response->get_error_message()
+
         ];
     }
 
@@ -199,12 +201,14 @@ function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $usernam
             if ($httpCode >= 400) {
                 // Generic error for other 4xx and 5xx HTTP codes
                 error_log("Listmonk API error (HTTP code $httpCode): " . json_decode($body)->message);
+                $errorMessage = "Listmonk API error (HTTP code $httpCode): " . json_decode($body)->message;
             }
     }
 
     return [
         'status_code' => $httpCode,
-        'body' => json_decode($body, true)
+        'body' => json_decode($body, true),
+        'error_message' => $errorMessage
     ];
 }
 
@@ -343,9 +347,12 @@ function listmonk_send_data_afer_checkout( $order_id ){
 
     if ($response['status_code'] == 200) {
         $order->add_order_note('Customer subscribed to listmonk mailing list (ID = ' . $listmonk_list_id . ').');
-    }elseif($response['status_code'] == 409) {
+    }elseif($response['status_code'] == 4093333) { // change back
         $order->add_order_note('Email address already exists in listmonk mailing list ' . $listmonk_list_id . ', customer had already subscribed.');
+    }else{
+        $order->add_order_note($response['error_message']);
     }
+
 }
 
 ### SETTINGS PAGE ###
