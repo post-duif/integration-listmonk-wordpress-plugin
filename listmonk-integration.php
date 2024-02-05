@@ -164,6 +164,7 @@ function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $usernam
 
     $httpCode = wp_remote_retrieve_response_code($response);
     $body = wp_remote_retrieve_body($response);
+    $errorMessage = '';
 
     // Handling different HTTP error codes
     switch ($httpCode) {
@@ -347,8 +348,8 @@ function listmonk_send_data_afer_checkout( $order_id ){
 
     if ($response['status_code'] == 200) {
         $order->add_order_note('Customer subscribed to listmonk mailing list (ID = ' . $listmonk_list_id . ').');
-    }elseif($response['status_code'] == 4093333) { // change back
-        $order->add_order_note('Email address already exists in listmonk mailing list ' . $listmonk_list_id . ', customer had already subscribed.');
+    }elseif($response['status_code'] == 409) {
+        $order->add_order_note('Listmonk: Email address already exists in listmonk mailing list ' . $listmonk_list_id . ', customer had already subscribed.');
     }else{
         $order->add_order_note($response['error_message']);
     }
