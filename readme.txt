@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/woutern
 Requires at least: 5.7
 Tested up to: 6.4.2
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 
