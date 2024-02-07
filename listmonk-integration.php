@@ -42,6 +42,7 @@ function listmonk_uninstall() {
     delete_option('listmonk_wpforms_form_id');
     delete_option('listmonk_form_on');
     delete_option('listmonk_checkout_on');
+    delete_option('listmonk_optin_text');
 }
 
 
@@ -403,7 +404,7 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
 
 // Sanitize checkbox input
 function listmonk_sanitize_checkbox($input){
-    return 'on' === $input ? 'yes' : 'no'; // Return 'yes' if the checkbox is checked, otherwise return 'no'
+    return isset($input) ? 'yes' : 'no';
 }
 
 function listmonk_sanitize_listmonk_url($input) {
