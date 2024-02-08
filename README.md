@@ -32,6 +32,8 @@ Or you can use a newsletter form created by the free third-party plugin WPForms:
 ## What about privacy?
 For each user that subscribes to a mailing list, their IP address and is recorded as well as a timestamp of subscription time. Subscribers through the WooCommerce checkout do not have to double opt-in, but people subscribing through a form need to confirm their subscription to avoid spam. When people subscribe through WooCommerce checkout, their country is also saved to listmonk. 
 
+Your listmonk API credentials are saved locally on your server and not saved anywhere externally. Your API password is encrypted before it is stored in the WordPress database. 
+
 ## Suggestions and bugs
 If you encounter any bugs or if you have suggestions for improvement, please create an issue on GitHub.
 
