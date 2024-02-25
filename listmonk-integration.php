@@ -16,8 +16,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
+/**
+ * Check if WooCommerce is activated
+ */
+if ( ! function_exists( 'is_woocommerce_activated' ) ) {
+	function is_woocommerce_activated() {
+		if ( class_exists( 'woocommerce' ) ) { return true; } else { return false; }
+	}
+}
+
 // check if WooCommerce checkout block is active
 function listmonk_is_checkout_block_enabled() {
+    if(is_woocommerce_activated() == false){
+        return;
+    }
     $checkout_page_id = wc_get_page_id('checkout');
 
     if ($checkout_page_id && $checkout_page_id != -1) {
@@ -672,7 +684,12 @@ function listmonk_render_checkbox_field($args){ // Function to render checkbox f
         // WPForms or a matching plugin is not active and the field is "listmonk_form_on," disable the checkbox and set it as unchecked
         $disabled = 'disabled="disabled"';
         $checked = '';
-        $message = 'WPForms not installed'; // Message for when WPForms is not installed
+        $message = 'WPForms is not installed'; // Message for when WPForms is not installed
+    } elseif($args['name'] === 'listmonk_checkout_on' && is_woocommerce_activated() == false){ // check if woocommerce is active
+        // Woocommerce is not active and the field is "listmonk_checkout_on," disable the checkbox and set it as unchecked
+        $disabled = 'disabled="disabled"';
+        $checked = '';
+        $message = 'WooCommerce is not installed'; // Message for when WPForms is not installed
     } else {
         // WPForms or a matching plugin is active or the field is not "listmonk_form_on," enable the checkbox and set its value based on the option
         $disabled = '';
