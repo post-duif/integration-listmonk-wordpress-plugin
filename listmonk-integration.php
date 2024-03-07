@@ -108,14 +108,12 @@ function listmonk_add_newsletter_checkbox_to_blocks_checkout() {
         return;
     }
 
-
-
     // Retrieve the custom label text from the options, with a default value
-    $optin_label = get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-listmonk'));
+    $optin_label = get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-for-listmonk'));
 
     // Check if $optin_label is empty, if so, use the default text
     if (empty($optin_label)) {
-        $optin_label = __('Subscribe to our newsletter', 'integration-listmonk');
+        $optin_label = __('Subscribe to our newsletter', 'integration-for-listmonk');
     }
 
     __experimental_woocommerce_blocks_register_checkout_field(
@@ -142,7 +140,7 @@ function listmonk_save_newsletter_subscription_checkbox($order_id) {
 function listmonk_display_newsletter_subscription_in_admin_order_meta($order) {
     $subscribed = $order->get_meta('newsletter_optin', true);
     $display_value = ($subscribed === 'true') ? 'Yes' : 'No'; // Display 'Yes' for 'true', 'No' otherwise`
-    echo '<p><strong>' . __('Newsletter subscription consent (listmonk):', 'integration-listmonk') . '</strong> ' . $display_value . '</p>';
+    echo '<p><strong>' . __('Newsletter subscription consent (listmonk):', 'integration-for-listmonk') . '</strong> ' . $display_value . '</p>';
 
 
     //experimental code for debugging
