@@ -1,11 +1,11 @@
 <?php
 /*
-Plugin Name: Integration for listmonk mailing list and newsletter manager
-Text Domain: integration-listmonk
+Plugin Name: Integration for listmonk
+Text Domain: integration-for-listmonk
 Plugin URI: https://github.com/post-duif/integration-listmonk-wordpress-plugin
 Description: Connects the open source listmonk mailing list and newsletter service to WordPress and WooCommerce, so users can subscribe to your mailing lists through a form on your website or through WooCommerce checkout.
 Author: postduif
-Version: 1.2.1
+Version: 1.2.3
 Requires PHP: 7.4
 Requires at least: 5.7
 License: GNU General Public License v3.0
@@ -24,6 +24,17 @@ if ( ! function_exists( 'is_woocommerce_activated' ) ) {
 		if ( class_exists( 'woocommerce' ) ) { return true; } else { return false; }
 	}
 }
+
+function listmonk_enqueue_admin_scripts($hook) {
+    // Only enqueue on your plugin's admin page
+    if ('settings_page_listmonk_integration' !== $hook) {
+        return;
+    }
+
+    // Enqueue your admin JavaScript
+    wp_enqueue_script('listmonk-admin-script', plugin_dir_url(__FILE__) . 'js/listmonk-admin.js', array('jquery'), '1.0.0', true);
+}
+add_action('admin_enqueue_scripts', 'listmonk_enqueue_admin_scripts');
 
 // check if WooCommerce checkout block is active
 function listmonk_is_checkout_block_enabled() {
@@ -73,18 +84,23 @@ function listmonk_initialize_listmonk_integration() {
 add_action('wp_loaded', 'listmonk_initialize_listmonk_integration');
 
 // add newsletter checkbox to checkout
+// this is for the old woocommerce checkout, not the blocks-based checkout
 function listmonk_add_newsletter_checkbox_to_checkout($fields) {
     if(listmonk_is_checkout_block_enabled()) {
         return; // Abort if the checkout block is enabled
     }
+
+    // Add the nonce field
+    wp_nonce_field('listmonk_newsletter_nonce_action', 'listmonk_newsletter_nonce');
+
     $email_priority = isset($fields['billing']['billing_email']['priority']) ? $fields['billing']['billing_email']['priority'] : 20;
     
     // Retrieve the custom label text from the options, with a default value
-    $optin_label = esc_html(get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-listmonk')));
+    $optin_label = esc_html(get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-for-listmonk')));
 
     // Check if $optin_label is empty, if so, use the default text
     if (empty($optin_label)) {
-        $optin_label = __('Subscribe to our newsletter', 'integration-listmonk');
+        $optin_label = __('Subscribe to our newsletter', 'integration-for-listmonk');
     }
     $fields['billing']['newsletter_optin'] = array(
         'type'      => 'checkbox',
@@ -100,7 +116,13 @@ function listmonk_add_newsletter_checkbox_to_checkout($fields) {
 
 
 // save newsletter checkbox value to order meta
+// this is for the old woocommerce checkout, not the blocks-based checkout
 function listmonk_save_newsletter_subscription_checkbox($order_id) {
+    // Check if our nonce is set and verify it.
+    if (!isset($_POST['listmonk_newsletter_nonce']) || !wp_verify_nonce($_POST['listmonk_newsletter_nonce'], 'listmonk_newsletter_nonce_action')) {
+        // Nonce not verified
+        return;
+    }
     $newsletter_optin = isset($_POST['newsletter_optin']) ? 'true' : 'false';
 
     $order = wc_get_order($order_id);
@@ -112,7 +134,7 @@ function listmonk_save_newsletter_subscription_checkbox($order_id) {
 function listmonk_display_newsletter_subscription_in_admin_order_meta($order) {
     $subscribed = $order->get_meta('newsletter_optin', true);
     $display_value = ($subscribed === 'true') ? 'Yes' : 'No'; // Display 'Yes' for 'true', 'No' otherwise`
-    echo '<p><strong>' . __('Newsletter subscription consent (listmonk):', 'integration-listmonk') . '</strong> ' . $display_value . '</p>';
+    echo '<p><strong>' . esc_html__('Newsletter subscription consent (listmonk):', 'integration-for-listmonk') . '</strong> ' . esc_html($display_value) . '</p>';
 }
 
 // end of the code to add newsletter checkbox to checkout
@@ -276,7 +298,7 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
     $listmonk_username = sanitize_text_field(get_option('listmonk_username'));
 
     ## password decryption
-    $encryption = new FSD_Data_Encryption();
+    $encryption = new listmonk_FSD_Data_Encryption();
     $encrypted_password = sanitize_text_field(get_option('listmonk_password'));
     $listmonk_password = $encryption->decrypt($encrypted_password);
 
@@ -348,7 +370,7 @@ function listmonk_send_data_afer_checkout( $order_id ){
     $listmonk_username = sanitize_text_field(get_option('listmonk_username'));
 
     ## password decryption using the fsd-data-encryption class
-    $encryption = new FSD_Data_Encryption();
+    $encryption = new listmonk_FSD_Data_Encryption();
     $encrypted_password = sanitize_text_field(get_option('listmonk_password'));
     $listmonk_password = $encryption->decrypt($encrypted_password);
     
@@ -483,7 +505,7 @@ function listmonk_sanitize_listmonk_password($input){ // Function to sanitize th
         return get_option('listmonk_password');
     }
     // Encrypt the new password
-    $encryption = new FSD_Data_Encryption();
+    $encryption = new listmonk_FSD_Data_Encryption();
     $encrypted_password = $encryption->encrypt(sanitize_text_field($input));
 
     return $encrypted_password;
@@ -596,17 +618,19 @@ function listmonk_settings_fields(){
 
 // Description for the 'Plugin Components' section
 function listmonk_plugin_components_description() { // Function to render the description for the 'Plugin Components' section
-    echo '<p>Integration for listmonk mailing list and newsletter manager can be enabled in two ways:</p><p> (1) On the WooCommerce checkout. Customers can check a box to subscribe to your newsletter. This check box will be added below the email address field.
+    echo '<p>' . esc_html__('Integration for listmonk mailing list and newsletter manager can be enabled in two ways:', 'integration-for-listmonk') . '</p>';
+    echo '<p>' . esc_html__('(1) On the WooCommerce checkout. Customers can check a box to subscribe to your newsletter. This check box will be added below the email address field.
     You can customize the text they will see by changing the text in the text box below. Currently only the old WooCommerce checkout is supported (so not the WooCommerce Blocks based checkout).
-    </p><p>(2) On any page on your website, using a custom newsletter form from the <a href="https://wordpress.org/plugins/wpforms-lite/">WPForms plugin</a> that you can include anywhere on your website. You can enter the WPForms form ID on this settings page.
-    </p><p>See <a href="https://listmonk.app/docs/">the listmonk documentation</a> for more information on how to setup listmonk, either on your own server or easily hosted versions on services like <a href="https://railway.app/new/template/listmonk">Railway</a> and <a href="https://www.pikapods.com/pods?run=listmonk">Pikapods</a>.</p>
+    ', 'integration-for-listmonk') . '</p>';
+    echo '<p>(2) On any page on your website, using a custom newsletter form from the <a href="https://wordpress.org/plugins/wpforms-lite/">WPForms plugin</a> that you can include anywhere on your website. You can enter the WPForms form ID on this settings page.</p>';
+    echo '<p>See <a href="https://listmonk.app/docs/">the listmonk documentation</a> for more information on how to setup listmonk, either on your own server or easily hosted versions on services like <a href="https://railway.app/new/template/listmonk">Railway</a> and <a href="https://www.pikapods.com/pods?run=listmonk">Pikapods</a>.</p>
     ';
 }
 
 // Description for the 'listmonk Credentials' section
 function listmonk_credentials_description() { // Function to render the description for the 'listmonk Credentials' section
-    echo '<p>In order for the integration to work, you need to provide your listmonk credentials. First input the listmonk list ID you want to 
-    send all new subscribers to. This ID is shown in listmonk when you click on a list. Second, you input the url of your listmonk server. Third, you input your listmonk username and password for authentication.</p>';
+    echo '<p>' . esc_html__('In order for the integration to work, you need to provide your listmonk credentials. First input the listmonk list ID you want to 
+    send all new subscribers to. This ID is shown in listmonk when you click on a list. Second, you input the url of your listmonk server. Third, you input your listmonk username and password for authentication.', 'integration-for-listmonk') . '</p>';
 }
 
 // Hook into the admin_enqueue_scripts action
@@ -638,8 +662,8 @@ function listmonk_render_listmonk_optin_text($args) {
     $value = get_option($option_name, 'Subscribe to our newsletter'); // Default value if option is not set
     $disabled = get_option('listmonk_checkout_on') !== 'yes' ? 'readonly' : '';
 
-    echo '<input class="listmonk-text-input" type="text" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . $disabled . ' />';
-    echo '<p class="description">This text will be shown on the WooCommerce checkout page when listmonk integration is enabled.</p>';
+    echo '<input class="listmonk-text-input" type="text" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . esc_attr($disabled) . ' />';
+    echo '<p class="description">' . esc_html__('This text will be shown on the WooCommerce checkout page when listmonk integration is enabled.', 'integration-for-listmonk') . '</p>';
 }
 
 function listmonk_render_text_field($args){
@@ -653,7 +677,7 @@ function listmonk_render_text_field($args){
         $field_type = 'password';
         $autocomplete = 'autocomplete="new-password"'; // Set autocomplete attribute for password field
         $placeholder = 'Enter new password to change'; // Informative placeholder text for the password field
-        $help_text = '<p class="description">Leave blank to keep the current password.</p>'; // Help text for the password field
+        $help_text = '<p class="description">' . esc_html__('Leave blank to keep the current password.', 'integration-for-listmonk') . '</p>';// Help text for the password field
     } else if ($args['name'] == 'listmonk_username') {
         $autocomplete = 'autocomplete="username"'; // Set autocomplete attribute for username field
     }
@@ -672,7 +696,7 @@ function listmonk_render_text_field($args){
 
     // Echo the help text
     if (!empty($help_text)) {
-        echo $help_text; // Help text
+        echo wp_kses_post($help_text); // Help text
     }
 }
 
@@ -684,12 +708,12 @@ function listmonk_render_checkbox_field($args){ // Function to render checkbox f
         // WPForms or a matching plugin is not active and the field is "listmonk_form_on," disable the checkbox and set it as unchecked
         $disabled = 'disabled="disabled"';
         $checked = '';
-        $message = 'WPForms is not installed'; // Message for when WPForms is not installed
+        $message = esc_html__('WPForms is not installed', 'integration-for-listmonk'); // Message for when WPForms is not installed
     } elseif($args['name'] === 'listmonk_checkout_on' && is_woocommerce_activated() == false){ // check if woocommerce is active
         // Woocommerce is not active and the field is "listmonk_checkout_on," disable the checkbox and set it as unchecked
         $disabled = 'disabled="disabled"';
         $checked = '';
-        $message = 'WooCommerce is not installed'; // Message for when WPForms is not installed
+        $message = esc_html__('WooCommerce is not installed', 'integration-for-listmonk');  // Message for when WooCommerce is not installed
     } else {
         // WPForms or a matching plugin is active or the field is not "listmonk_form_on," enable the checkbox and set its value based on the option
         $disabled = '';
@@ -699,37 +723,13 @@ function listmonk_render_checkbox_field($args){ // Function to render checkbox f
     
     ?>
     <label>
-        <input type="checkbox" name="<?php echo esc_attr($args['name']); ?>" <?php echo esc_attr($checked); ?> <?php echo esc_attr($disabled); ?> /> Yes
+        <input type="checkbox" name="<?php echo esc_attr($args['name']); ?>" <?php echo esc_attr($checked); ?> <?php echo esc_attr($disabled); ?> /> <?php esc_html_e('Yes', 'integration-for-listmonk'); ?>
     </label>
     <?php
     if ($message) {
         echo '<p class="description">' . esc_html($message) . '</p>'; // Show message if WPForms is not installed
     }
-    // Include JavaScript for dynamic toggling
-    ?>
-    <script type="text/javascript">
-    jQuery(document).ready(function($) {
-        $('#listmonk_form_on').change(function() {
-            var isFormEnabled = $(this).is(':checked');
-            $('#listmonk_wpforms_form_id').prop('readonly', !isFormEnabled);
-        }).change(); // Initialize on page load
-    });
-    jQuery(document).ready(function($) {
-        // Function to visually toggle textbox state
-        function toggleTextboxState(isEnabled) {
-            $('#listmonk_optin_text').prop('readonly', !isEnabled).toggleClass('disabled-textbox', !isEnabled);
-        }
-
-        // Event handler for checkbox change
-        $('#listmonk_checkout_on').change(function() {
-            toggleTextboxState($(this).is(':checked'));
-        }).change(); // Initialize on page load
-    });
-    </script>
-
-
-
-    <?php
+    // in listmonk-admin.js there is js code that was previously located here 
 }
 
 function listmonk_is_plugin_active_with_prefix($prefix){ // Function to check if a plugin with a name starting with a prefix is active
@@ -750,8 +750,8 @@ function listmonk_render_wpforms_form_id_field($args) {
     $value = esc_attr(get_option($option_name, '')); // Default value if option is not set
     $disabled = get_option('listmonk_form_on') !== 'yes' ? 'readonly' : '';
 
-    echo '<input class="listmonk-number-input" type="number" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . $disabled . ' />';
-    echo '<p class="description">Enter the WPForms Form ID here. This ID is used when listmonk integration with WPForms is enabled.</p>';
+    echo '<input class="listmonk-number-input" type="number" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . esc_attr($disabled) . ' />';
+    echo '<p class="description">' . esc_html__('Enter the WPForms Form ID here. This ID is used when listmonk integration with WPForms is enabled.', 'integration-for-listmonk') . '</p>';
 }
 
 
