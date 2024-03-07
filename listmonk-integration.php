@@ -108,6 +108,8 @@ function listmonk_add_newsletter_checkbox_to_blocks_checkout() {
         return;
     }
 
+
+
     // Retrieve the custom label text from the options, with a default value
     $optin_label = get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-listmonk'));
 
@@ -440,9 +442,8 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
     // Display warning if both conditions are met
     if (listmonk_is_checkout_block_enabled() && get_option('listmonk_checkout_on') == 'yes') {
         echo '<div class="notice notice-warning">';
-        echo '<p>The new <a href="' . esc_url('https://woo.com/checkout-blocks/') . '">WooCommerce checkout block</a> is enabled on your site. This means the listmonk integration that
-        let\'s users subscribe to your newsletter from the checkout page will not work. Compatibility with the WooCommerce checkout block is being worked on.
-        If this integration is important to you, <a href="' . esc_url('https://woo.com/document/cart-checkout-blocks-status/#section-7') . '">consider switching back to the old WooCommerce checkout experience</a>.</p>';
+        echo '<p>The new <a href="' . esc_url('https://woo.com/checkout-blocks/') . '">WooCommerce checkout block</a> is enabled on your site. This plugin has experimental support for the blocks based checkout. If you experience any errors,
+        please <a href="' . esc_url('https://woo.com/document/cart-checkout-blocks-status/#section-7') . '">consider switching back to the old WooCommerce checkout experience</a> or disable the listmonk integration on WooCommerce checkout.</p>';
         echo '</div>';
     }
 
