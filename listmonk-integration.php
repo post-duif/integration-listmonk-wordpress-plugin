@@ -57,6 +57,7 @@ function listmonk_uninstall() {
     delete_option('listmonk_optin_text');
 }
 
+add_action('woocommerce_blocks_loaded','listmonk_add_newsletter_checkbox_to_blocks_checkout');
 
 // start of the code to add newsletter checkbox to checkout
 
@@ -72,7 +73,7 @@ function listmonk_initialize_listmonk_integration() {
 // initialize the listmonk integration
 add_action('wp_loaded', 'listmonk_initialize_listmonk_integration');
 
-// add newsletter checkbox to checkout
+// add newsletter checkbox to classic WooCommerce checkout
 function listmonk_add_newsletter_checkbox_to_checkout($fields) {
     if(listmonk_is_checkout_block_enabled()) {
         return; // Abort if the checkout block is enabled
@@ -98,6 +99,33 @@ function listmonk_add_newsletter_checkbox_to_checkout($fields) {
     return $fields;
 }
 
+function listmonk_add_newsletter_checkbox_to_blocks_checkout() {
+    if(listmonk_is_checkout_block_enabled() == false){ // if checkout block isnt enabled, abort 
+        return;
+    }
+
+    if (get_option('listmonk_checkout_on') !== 'yes') { // if user has disabled listmonk integration on the checkout page, abort
+        return;
+    }
+
+    // Retrieve the custom label text from the options, with a default value
+    $optin_label = get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-listmonk'));
+
+    // Check if $optin_label is empty, if so, use the default text
+    if (empty($optin_label)) {
+        $optin_label = __('Subscribe to our newsletter', 'integration-listmonk');
+    }
+
+    __experimental_woocommerce_blocks_register_checkout_field(
+        array(
+            'id'       => 'listmonk/newsletter_optin',
+            'label'    => $optin_label,
+            'location' => 'contact',
+            'type'     => 'checkbox',
+
+        )
+    );
+}
 
 // save newsletter checkbox value to order meta
 function listmonk_save_newsletter_subscription_checkbox($order_id) {
@@ -113,6 +141,20 @@ function listmonk_display_newsletter_subscription_in_admin_order_meta($order) {
     $subscribed = $order->get_meta('newsletter_optin', true);
     $display_value = ($subscribed === 'true') ? 'Yes' : 'No'; // Display 'Yes' for 'true', 'No' otherwise`
     echo '<p><strong>' . __('Newsletter subscription consent (listmonk):', 'integration-listmonk') . '</strong> ' . $display_value . '</p>';
+
+
+    //experimental code for debugging
+    // Assuming $order is your order object
+    $additional_fields = $order->get_meta('_additional_fields', true);
+
+    // Check if the specific key exists and retrieve its value
+    if (is_array($additional_fields) && isset($additional_fields['listmonk/newsletter_optin'])) {
+        $subscribed = $additional_fields['listmonk/newsletter_optin'];
+        echo $subscribed; // just for debugging
+    }
+
+    // Use $subscribed as needed
+
 }
 
 // end of the code to add newsletter checkbox to checkout
@@ -306,11 +348,19 @@ function listmonk_send_data_afer_checkout( $order_id ){
     }
 
     $order = wc_get_order( absint($order_id) ); // Get an instance of the WC_Order Object
-
+    $additional_fields = $order->get_meta('_additional_fields', true);
     // check for user newsletter consent
-    $field_name = 'newsletter_optin'; // change this field to the name of your custom field for storing user consent in a checkbox
-    $consent = $order->get_meta($field_name); // get user consent from custom field
-    if ($consent != 'true' && $consent != '1') { // if user did not give consent, return
+   // $field_name = 'newsletter_optin'; // change this field to the name of your custom field for storing user consent in a checkbox
+    
+    if (is_array($additional_fields) && isset($additional_fields['listmonk/newsletter_optin'])) {
+        $subscribed = $additional_fields['listmonk/newsletter_optin'];
+    } elseif ($order->get_meta('newsletter_optin') !== '' && $order->get_meta('newsletter_optin') !== false) {
+        $subscribed = $order->get_meta('newsletter_optin');
+    }
+
+    if (!in_array($subscribed, ['1', 1, 'true', true], true)) {
+        echo 'no consent';
+        echo $subscribed;
         return;
     }
     
