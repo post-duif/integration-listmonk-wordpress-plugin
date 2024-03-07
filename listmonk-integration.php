@@ -68,6 +68,7 @@ function listmonk_uninstall() {
     delete_option('listmonk_optin_text');
 }
 
+add_action('woocommerce_blocks_loaded','listmonk_add_newsletter_checkbox_to_blocks_checkout');
 
 // start of the code to add newsletter checkbox to checkout
 
@@ -114,6 +115,33 @@ function listmonk_add_newsletter_checkbox_to_checkout($fields) {
     return $fields;
 }
 
+function listmonk_add_newsletter_checkbox_to_blocks_checkout() {
+    if(listmonk_is_checkout_block_enabled() == false){ // if checkout block isnt enabled, abort 
+        return;
+    }
+
+    if (get_option('listmonk_checkout_on') !== 'yes') { // if user has disabled listmonk integration on the checkout page, abort
+        return;
+    }
+
+    // Retrieve the custom label text from the options, with a default value
+    $optin_label = get_option('listmonk_optin_text', __('Subscribe to our newsletter', 'integration-for-listmonk'));
+
+    // Check if $optin_label is empty, if so, use the default text
+    if (empty($optin_label)) {
+        $optin_label = __('Subscribe to our newsletter', 'integration-for-listmonk');
+    }
+
+    __experimental_woocommerce_blocks_register_checkout_field(
+        array(
+            'id'       => 'listmonk/newsletter_optin',
+            'label'    => $optin_label,
+            'location' => 'contact',
+            'type'     => 'checkbox',
+
+        )
+    );
+}
 
 // save newsletter checkbox value to order meta
 // this is for the old woocommerce checkout, not the blocks-based checkout
@@ -328,11 +356,19 @@ function listmonk_send_data_afer_checkout( $order_id ){
     }
 
     $order = wc_get_order( absint($order_id) ); // Get an instance of the WC_Order Object
-
+    $additional_fields = $order->get_meta('_additional_fields', true);
     // check for user newsletter consent
-    $field_name = 'newsletter_optin'; // change this field to the name of your custom field for storing user consent in a checkbox
-    $consent = $order->get_meta($field_name); // get user consent from custom field
-    if ($consent != 'true' && $consent != '1') { // if user did not give consent, return
+   // $field_name = 'newsletter_optin'; // change this field to the name of your custom field for storing user consent in a checkbox
+    
+    if (is_array($additional_fields) && isset($additional_fields['listmonk/newsletter_optin'])) {
+        $subscribed = $additional_fields['listmonk/newsletter_optin'];
+    } elseif ($order->get_meta('newsletter_optin') !== '' && $order->get_meta('newsletter_optin') !== false) {
+        $subscribed = $order->get_meta('newsletter_optin');
+    }
+
+    if (!in_array($subscribed, ['1', 1, 'true', true], true)) {
+        echo 'no consent';
+        echo $subscribed;
         return;
     }
     
@@ -412,9 +448,8 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
     // Display warning if both conditions are met
     if (listmonk_is_checkout_block_enabled() && get_option('listmonk_checkout_on') == 'yes') {
         echo '<div class="notice notice-warning">';
-        echo '<p>The new <a href="' . esc_url('https://woo.com/checkout-blocks/') . '">WooCommerce checkout block</a> is enabled on your site. This means the listmonk integration that
-        let\'s users subscribe to your newsletter from the checkout page will not work. Compatibility with the WooCommerce checkout block is being worked on.
-        If this integration is important to you, <a href="' . esc_url('https://woo.com/document/cart-checkout-blocks-status/#section-7') . '">consider switching back to the old WooCommerce checkout experience</a>.</p>';
+        echo '<p>The new <a href="' . esc_url('https://woo.com/checkout-blocks/') . '">WooCommerce checkout block</a> is enabled on your site. This plugin has experimental support for the blocks based checkout. If you experience any errors,
+        please <a href="' . esc_url('https://woo.com/document/cart-checkout-blocks-status/#section-7') . '">consider switching back to the old WooCommerce checkout experience</a> or disable the listmonk integration on WooCommerce checkout.</p>';
         echo '</div>';
     }
 
