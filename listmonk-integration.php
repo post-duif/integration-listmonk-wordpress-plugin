@@ -63,9 +63,12 @@ function listmonk_uninstall() {
     delete_option('listmonk_url');
     delete_option('listmonk_list_id');
     delete_option('listmonk_wpforms_form_id');
-    delete_option('listmonk_form_on');
+    delete_option('listmonk_wpforms_integration_on');
     delete_option('listmonk_checkout_on');
     delete_option('listmonk_optin_text');
+    delete_option('listmonk_cf7_integration_on');
+    delete_option('listmonk_cf7_form_id');
+
 }
 
 add_action('woocommerce_blocks_loaded','listmonk_add_newsletter_checkbox_to_blocks_checkout');
@@ -282,10 +285,10 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
         return; // Abort if settings are not configured
     }
     $listmonk_wpforms_form_id = absint(get_option('listmonk_wpforms_form_id')); // convert form id from option to integer
-    $listmonk_form_on = sanitize_text_field(get_option('listmonk_form_on')); // check if the listmonk form option is disabled in settings
+    $listmonk_wpforms_integration_on = sanitize_text_field(get_option('listmonk_wpforms_integration_on')); // check if the listmonk form option is disabled in settings
 
     // check if the form id matches the form id from the settings page and if the listmonk form option is enabled
-    if (get_option('listmonk_form_on') != 'yes' || absint($form_data['id']) !== $listmonk_wpforms_form_id) { 
+    if (get_option('listmonk_wpforms_integration_on') != 'yes' || absint($form_data['id']) !== $listmonk_wpforms_form_id) { 
         return;
     }
 
@@ -338,6 +341,83 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
 
 }
 add_action( 'wpforms_process_complete', 'listmonk_send_data_through_wpforms', 10, 4 );
+
+/** EXPERIMENTAL CODE */
+
+function listmonk_send_data_through_contact_form_7( $contact_form, $abort, $submission ) {
+    if (!listmonk_are_listmonk_settings_configured()) {
+        return; // Abort if settings are not configured
+    }
+    $listmonk_cf7_form_id = absint(get_option('listmonk_cf7_form_id')); // convert form id from option to integer
+    $listmonk_cf7_integration_on = sanitize_text_field(get_option('listmonk_cf7_integration_on')); // check if the listmonk form option is disabled in settings
+
+    // check if the form id matches the form id from the settings page and if the listmonk form option is enabled
+    if (get_option('listmonk_cf7_integration_on') != 'yes' || absint($contact_form->id()) !== $listmonk_cf7_form_id) { 
+        return;
+    }
+
+    $posted_data = $submission->get_posted_data();
+
+    // Retrieve specific field data
+    $email = isset($posted_data['your-email']) ? sanitize_text_field($posted_data['your-email']) : '';
+    $name = isset($posted_data['your-name']) ? sanitize_email($posted_data['your-name']) : '';
+
+    // Add your logic here to send data to listmonk
+    
+    // retrieve data to send to listmonk
+    $website_name = sanitize_text_field(get_bloginfo( 'name' )); // Retrieves the website's name from the WordPress database
+    $listmonk_list_id = absint(get_option('listmonk_list_id', 0)); // get listmonk list id from settings page
+
+    ## for listmonk
+    $attributes = [
+        'subscription_origin' => 'Contact Form 7',
+        'confirmed_consent' => true, // user gave consent to receive newsletter
+        'consent_agreement' => 'I consent to receiving periodic newsletters from ' . $website_name . '.', // Use the website name dynamically
+    ] ;
+
+    // remove email from name field input
+    $pattern = '/[^@\s]*@[^@\s]*\.[^@\s]*/'; // to avoid spam
+    $replacement = '[removed]';
+
+    // sanitize name input
+    $name = sanitize_text_field(strip_tags($name)); // get name from form; this assumes it is the first field in the form
+    $name_email_stripped = preg_replace($pattern, $replacement, $name); // remove email from name field input
+    $name_stripped_all = preg_replace('/[a-zA-Z]*[:\/\/]*[A-Za-z0-9\-_]+\.+[A-Za-z0-9\.\/%&=\?\-_]+/i', $replacement, $name_email_stripped); // remove urls from name field input
+
+    // body to send with POST to the API
+    $body = array(
+        'name'  => $name_stripped_all,
+        'email' => $email,
+        'status' => 'enabled',
+        'lists' => [(int)$listmonk_list_id],
+        'attribs' => $attributes,
+        'preconfirm_subscriptions' => false, // set presubscription to false, because anyone can enter an email here
+    ) ;
+
+    #listmonk credentials
+    $listmonk_url = esc_url_raw(get_option('listmonk_url'));
+    $listmonk_username = sanitize_text_field(get_option('listmonk_username'));
+
+    ## password decryption using the fsd-data-encryption class
+    $encryption = new listmonk_FSD_Data_Encryption();
+    $encrypted_password = sanitize_text_field(get_option('listmonk_password'));
+    $listmonk_password = $encryption->decrypt($encrypted_password);
+    
+    // append the url from the settings page
+    $url = $listmonk_url . '/api/subscribers';
+
+    // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through WordPress HTTP API
+
+    $response = listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $listmonk_username, $listmonk_password);
+
+    // Optionally skip sending the email
+    // add_filter('wpcf7_skip_mail', function() { return true; });
+
+    return $contact_form;
+}
+add_filter( 'wpcf7_before_send_mail', 'listmonk_send_data_through_contact_form_7', 10, 3 );
+
+/** END OF EXPERIMENTAL CODE */
 
 ## send subscriber data to listmonk after paying 
 
@@ -579,15 +659,25 @@ function listmonk_settings_fields(){
         array('name' => 'listmonk_checkout_on') // Additional arguments for the callback function
     );
  // Register and add settings fields
-    register_setting($option_group, 'listmonk_form_on', 'listmonk_sanitize_checkbox');
+    register_setting($option_group, 'listmonk_wpforms_integration_on', 'listmonk_sanitize_checkbox');
     add_settings_field(
-        'listmonk_form_on',
+        'listmonk_wpforms_integration_on',
         'Enable listmonk integration on a custom form using WPForms plugin:',
         'listmonk_render_checkbox_field',
         $page_slug,
         'listmonk_plugin_components',
-        array('name' => 'listmonk_form_on')
+        array('name' => 'listmonk_wpforms_integration_on')
     );
+// Register and add settings fields
+     register_setting($option_group, 'listmonk_cf7_integration_on', 'listmonk_sanitize_checkbox');
+     add_settings_field(
+         'listmonk_cf7_integration_on',
+         'Enable listmonk integration on a custom form using the Contact Form 7 plugin:',
+         'listmonk_render_checkbox_field',
+         $page_slug,
+         'listmonk_plugin_components',
+         array('name' => 'listmonk_cf7_integration_on')
+     );
 // Register and add settings fields
     register_setting($option_group, 'listmonk_wpforms_form_id', 'listmonk_sanitize_list_id');
     add_settings_field(
@@ -597,6 +687,16 @@ function listmonk_settings_fields(){
         $page_slug,
         'listmonk_plugin_components',
         array('name' => 'listmonk_wpforms_form_id')
+    );
+// Register and add settings fields
+    register_setting($option_group, 'listmonk_cf7_form_id', 'listmonk_sanitize_list_id');
+    add_settings_field(
+        'listmonk_cf7_form_id',
+        'Contact Form 7 Page ID:',
+        'listmonk_render_cf7_form_id_field',
+        $page_slug,
+        'listmonk_plugin_components',
+        array('name' => 'listmonk_cf7_form_id')
     );
 // Register and add settings fields
     register_setting($option_group, 'listmonk_list_id', 'listmonk_sanitize_list_id');
@@ -653,11 +753,12 @@ function listmonk_settings_fields(){
 
 // Description for the 'Plugin Components' section
 function listmonk_plugin_components_description() { // Function to render the description for the 'Plugin Components' section
-    echo '<p>' . esc_html__('Integration for listmonk mailing list and newsletter manager can be enabled in two ways:', 'integration-for-listmonk') . '</p>';
+    echo '<p>' . esc_html__('Integration for listmonk mailing list and newsletter manager can be enabled in three ways:', 'integration-for-listmonk') . '</p>';
     echo '<p>' . esc_html__('(1) On the WooCommerce checkout. Customers can check a box to subscribe to your newsletter. This check box will be added below the email address field.
     You can customize the text they will see by changing the text in the text box below. Currently only the old WooCommerce checkout is supported (so not the WooCommerce Blocks based checkout).
     ', 'integration-for-listmonk') . '</p>';
     echo '<p>(2) On any page on your website, using a custom newsletter form from the <a href="https://wordpress.org/plugins/wpforms-lite/">WPForms plugin</a> that you can include anywhere on your website. You can enter the WPForms form ID on this settings page.</p>';
+    echo '<p>(3) On any page on your website, using the <a href="https://wordpress.org/plugins/contact-form-7/">Contact Form 7 plugin</a> with the standard fields "your-name" and "your-email" present. Below you can enter the <em>page ID</em> of the page you have enabled the Contact Form 7 form.</p>';
     echo '<p>See <a href="https://listmonk.app/docs/">the listmonk documentation</a> for more information on how to setup listmonk, either on your own server or easily hosted versions on services like <a href="https://railway.app/new/template/listmonk">Railway</a> and <a href="https://www.pikapods.com/pods?run=listmonk">Pikapods</a>.</p>
     ';
 }
@@ -739,8 +840,8 @@ function listmonk_render_checkbox_field($args){ // Function to render checkbox f
     $value = get_option($args['name']); // Get the current value of the option
     
     // Check if WPForms or any plugin with a name starting with "wpforms" is active
-    if ($args['name'] === 'listmonk_form_on' && !listmonk_is_plugin_active_with_prefix('wpforms')) {
-        // WPForms or a matching plugin is not active and the field is "listmonk_form_on," disable the checkbox and set it as unchecked
+    if ($args['name'] === 'listmonk_wpforms_integration_on' && !listmonk_is_plugin_active_with_prefix('wpforms')) {
+        // WPForms or a matching plugin is not active and the field is "listmonk_wpforms_integration_on," disable the checkbox and set it as unchecked
         $disabled = 'disabled="disabled"';
         $checked = '';
         $message = esc_html__('WPForms is not installed', 'integration-for-listmonk'); // Message for when WPForms is not installed
@@ -749,11 +850,16 @@ function listmonk_render_checkbox_field($args){ // Function to render checkbox f
         $disabled = 'disabled="disabled"';
         $checked = '';
         $message = esc_html__('WooCommerce is not installed', 'integration-for-listmonk');  // Message for when WooCommerce is not installed
+    } elseif($args['name'] === 'listmonk_cf7_integration_on' && !listmonk_is_plugin_active_with_prefix('contact-form-7')){ // check if woocommerce is active
+        // Woocommerce is not active and the field is "listmonk_checkout_on," disable the checkbox and set it as unchecked
+        $disabled = 'disabled="disabled"';
+        $checked = '';
+        $message = esc_html__('Contact Form 7 is not installed', 'integration-for-listmonk');  // Message for when WooCommerce is not installed
     } else {
-        // WPForms or a matching plugin is active or the field is not "listmonk_form_on," enable the checkbox and set its value based on the option
+        // WPForms or a matching plugin is active or the field is not "listmonk_wpforms_integration_on," enable the checkbox and set its value based on the option
         $disabled = '';
         $checked = checked($value, 'yes', false); // Set to checked if the option value is ' yes'
-        $message = ''; // No message when WPForms is active or the field is not "listmonk_form_on"
+        $message = ''; // No message when WPForms is active or the field is not "listmonk_wpforms_integration_on"
     }
     
     ?>
@@ -783,12 +889,21 @@ function listmonk_is_plugin_active_with_prefix($prefix){ // Function to check if
 function listmonk_render_wpforms_form_id_field($args) {
     $option_name = esc_attr($args['name']);
     $value = esc_attr(get_option($option_name, '')); // Default value if option is not set
-    $disabled = get_option('listmonk_form_on') !== 'yes' ? 'readonly' : '';
+    $disabled = get_option('listmonk_wpforms_integration_on') !== 'yes' ? 'readonly' : '';
 
     echo '<input class="listmonk-number-input" type="number" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . esc_attr($disabled) . ' />';
     echo '<p class="description">' . esc_html__('Enter the WPForms Form ID here. This ID is used when listmonk integration with WPForms is enabled.', 'integration-for-listmonk') . '</p>';
 }
 
+// Function to render Contact Form 7 ID field
+function listmonk_render_cf7_form_id_field($args) {
+    $option_name = esc_attr($args['name']);
+    $value = esc_attr(get_option($option_name, '')); // Default value if option is not set
+    $disabled = get_option('listmonk_cf7_integration_on') !== 'yes' ? 'readonly' : '';
+
+    echo '<input class="listmonk-number-input" type="number" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . esc_attr($disabled) . ' />';
+    echo '<p class="description">' . esc_html__('Enter the page ID of the page where the Contact Form 7 form is active. This ID is used when listmonk integration with Contact Form 7 is enabled to let people subscribe to listmonk through a form. This is the page ID of the page where you entered the Contact Form 7 shortcode to render your form.', 'integration-for-listmonk') . '</p>';
+}
 
 // Function to render listmonk List ID field
 function listmonk_render_listmonk_list_id_field($args) { // Function to render listmonk List ID field
