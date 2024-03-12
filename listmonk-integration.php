@@ -5,9 +5,9 @@ Text Domain: integration-for-listmonk
 Plugin URI: https://github.com/post-duif/integration-listmonk-wordpress-plugin
 Description: Connects the open source listmonk mailing list and newsletter service to WordPress and WooCommerce, so users can subscribe to your mailing lists through a form on your website or through WooCommerce checkout.
 Author: postduif
-Version: 1.2.3
+Version: 1.3.1
 Requires PHP: 7.4
-Requires at least: 5.7
+Requires at least: 6.0
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 */
@@ -19,10 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Check if WooCommerce is activated
  */
-if ( ! function_exists( 'is_woocommerce_activated' ) ) {
-	function is_woocommerce_activated() {
-		if ( class_exists( 'woocommerce' ) ) { return true; } else { return false; }
-	}
+function listmonk_is_woocommerce_activated() {
+    if ( class_exists( 'woocommerce' ) ) { return true; } else { return false; }
 }
 
 function listmonk_enqueue_admin_scripts($hook) {
@@ -38,7 +36,7 @@ add_action('admin_enqueue_scripts', 'listmonk_enqueue_admin_scripts');
 
 // check if WooCommerce checkout block is active
 function listmonk_is_checkout_block_enabled() {
-    if(is_woocommerce_activated() == false){
+    if(listmonk_is_woocommerce_activated() == false){
         return;
     }
     $checkout_page_id = wc_get_page_id('checkout');
@@ -150,7 +148,7 @@ function listmonk_add_newsletter_checkbox_to_blocks_checkout() {
 // this is for the old woocommerce checkout, not the blocks-based checkout
 function listmonk_save_newsletter_subscription_checkbox($order_id) {
     // Check if our nonce is set and verify it.
-    if (!isset($_POST['listmonk_newsletter_nonce']) || !wp_verify_nonce($_POST['listmonk_newsletter_nonce'], 'listmonk_newsletter_nonce_action')) {
+    if (!isset($_POST['listmonk_newsletter_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['listmonk_newsletter_nonce'])), 'listmonk_newsletter_nonce_action')) {
         // Nonce not verified
         return;
     }
@@ -176,13 +174,13 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/fsd-data-encryption.php';
 ## get user ip
 function listmonk_get_the_user_ip() {
     if ( ! empty( $_SERVER['HTTP_CLIENT_IP'] ) ) {
-    //check ip from share internet
-    $ip = sanitize_text_field($_SERVER['HTTP_CLIENT_IP']);
+        //check ip from share internet
+        $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_CLIENT_IP']));
     } elseif ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
     //to check ip is passed from proxy
-    $ip = sanitize_text_field($_SERVER['HTTP_X_FORWARDED_FOR']); // get ip address of user
+        $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR'])); // get ip address of user
     } else {
-    $ip = sanitize_text_field($_SERVER['REMOTE_ADDR']); // get ip address of user
+        $ip = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])); // get ip address of user
     }
     return ($ip); // return ip address
 }
@@ -199,7 +197,7 @@ function listmonk_are_listmonk_settings_configured() {
 ## function to send data to listmonk through WordPress HTTP API
 function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $username, $password) {
     // Sanitize the URL
-    $url = esc_url_raw($url);
+    $url = esc_url_raw(filter_var($url, FILTER_VALIDATE_URL));
 
     // Prepare the headers
     $headers = array(
@@ -310,7 +308,7 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
     $replacement = '[removed]';
 
     // sanitize name input
-    $name = sanitize_text_field(strip_tags($fields['1']['value'])); // get name from form; this assumes it is the first field in the form
+    $name = sanitize_text_field(wp_strip_all_tags($fields['1']['value'])); // get name from form; this assumes it is the first field in the form
     $name_email_stripped = preg_replace($pattern, $replacement, $name); // remove email from name field input
     $name_stripped_all = preg_replace('/[a-zA-Z]*[:\/\/]*[A-Za-z0-9\-_]+\.+[A-Za-z0-9\.\/%&=\?\-_]+/i', $replacement, $name_email_stripped); // remove urls from name field input
 
@@ -358,6 +356,8 @@ function listmonk_send_data_through_contact_form_7( $contact_form, $abort, $subm
 
     $posted_data = $submission->get_posted_data();
 
+    $ip = listmonk_get_the_user_ip(); // define ip address of user, used for listmonk consent recording
+
     // Retrieve specific field data
     $email = isset($posted_data['your-email']) ? sanitize_text_field($posted_data['your-email']) : '';
     $name = isset($posted_data['your-name']) ? sanitize_email($posted_data['your-name']) : '';
@@ -372,6 +372,7 @@ function listmonk_send_data_through_contact_form_7( $contact_form, $abort, $subm
     $attributes = [
         'subscription_origin' => 'Contact Form 7',
         'confirmed_consent' => true, // user gave consent to receive newsletter
+        'ip_address' => $ip, // ip address of user
         'consent_agreement' => 'I consent to receiving periodic newsletters from ' . $website_name . '.', // Use the website name dynamically
     ] ;
 
@@ -845,7 +846,7 @@ function listmonk_render_checkbox_field($args){ // Function to render checkbox f
         $disabled = 'disabled="disabled"';
         $checked = '';
         $message = esc_html__('WPForms is not installed', 'integration-for-listmonk'); // Message for when WPForms is not installed
-    } elseif($args['name'] === 'listmonk_checkout_on' && is_woocommerce_activated() == false){ // check if woocommerce is active
+    } elseif($args['name'] === 'listmonk_checkout_on' && listmonk_is_woocommerce_activated() == false){ // check if woocommerce is active
         // Woocommerce is not active and the field is "listmonk_checkout_on," disable the checkbox and set it as unchecked
         $disabled = 'disabled="disabled"';
         $checked = '';

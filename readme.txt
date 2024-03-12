@@ -1,50 +1,45 @@
 === Integration for listmonk mailing list and newsletter service ===
 Contributors: postduif
-Tags: listmonk,newsletter,wordpress,woocommerce,subscribers,mail,mailing,api
-Donate link: https://buymeacoffee.com/woutern
-Requires at least: 5.7
-Tested up to: 6.4.2
+Tags: listmonk, newsletter, WordPress, WooCommerce, subscribers, mail, mailing, api
+Donate link: https://buymeacoffee.com/postduif
+Requires at least: 6.0
+Tested up to: 6.4.3
 Requires PHP: 7.4
-Stable tag: 1.2.1
+Stable tag: 1.3.1
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 
-Integrates the open source mailing list tool listmonk with Wordpress / Woocommerce so users can subscribe to your mailing list.
+Integrates the open-source mailing list tool listmonk with WordPress/WooCommerce so users can subscribe to your mailing list.
 
 == Description ==
-This Wordpress plugin integrates [listmonk](https://listmonk.app/) with your Wordpress / WooCommerce website.
+This WordPress plugin integrates listmonk with your WordPress / WooCommerce website.
 
-You can use it to (1) let people subscribe to your newsletter through a form on your website (using the free WPForms plugin, you can download it in the plugin directory), (2) or you can let people subscribe to your newsletter from the WooCommerce checkout page. After a customer pays, their email address and name will be sent to the listmonk mailing list of your choice.
+You can use it to:
 
-Using Listmonk as an open source newsletter and mailing tool, makes you (1) less dependent on paid, closed source services like Mailchimp, (2) costs less and (3) has no limits on the amounts of emails you can send i.e. per month.
+- Let people subscribe to your newsletter through a form on your website using WPForms or Contact Form 7.
+- Allow people to subscribe to your newsletter from the WooCommerce checkout page. After a customer pays, their email address and name will be sent to the listmonk mailing list of your choice.
+
+Using listmonk as an open-source newsletter and mailing tool makes you less dependent on services like Mailchimp, costs less, and has no limits on the amount of emails you can send per month.
 
 ## How to use this plugin
-
-1. Make sure you have access to a configured listmonk server. See the listmonk documentation for more information on how to setup listmonk, either on your own server or easily hosted versions on services like Railway and Pikapods. You can connect Listmonk to email services like Amazon SES, costing you as little as 0,1$ per thousand emails. For this Wordpress integration plugin you need the Listmonk URL, username and password.
-2. Use either WPForms or the WooCommerce checkout to send subscriber data to listmonk. You can add a custom checkout box to the WooCommerce checkout in the settings of this plugin, so people can opt-in to your mailing list. 
-3. Figure out the _Listmonk list ID_ that you want to use to subscribe everyone to. See listmonk documentation for more details.
-4. Open the settings page of Listmonk integration to enter things like url, username and password. You can also enable and disable the Woocommerce and WPForms components. 
-
-## How does this plugin work?
-
-This plugin uses the well-documented listmonk API to send data from your Wordpress server to the Listmonk server over HTTPS.
+1. Download the plugin and upload the folder to your WordPress plugin directory.
+2. Ensure you have access to a configured listmonk server. You can connect listmonk to email services like Amazon SES, which costs as little as $0.10 per thousand emails.
+3. Access the plugin's settings page from your WordPress admin dashboard under Settings to enable and disable components and enter listmonk credentials.
+4. Determine the listmonk list ID you want to subscribe people to. See listmonk documentation for more details.
+5. Utilize WPForms, Contact Form 7, or a custom field on the WooCommerce checkout page to send subscriber data to listmonk.
+6. When using a custom field on the WooCommerce checkout page, you can input a text customers will see during checkout.
 
 ## Requirements
-- An accessible listmonk server
-- If you want to use it so people can subscribe to a mailing list during checkout, you need WooCommerce enabled. Currently only the classic WooCommerce checkout is supported; support for WooCommerce blocks will follow. 
-- If you want to use this plugin so people can fill in a form on your website to subscribe to you mailing list, you need to have the free [WPForms](https://wordpress.org/plugins/wpforms-lite/) plugin enabled. 
+- WordPress website (latest version recommended);
+- Accessible listmonk server over HTTPS (tested up to listmonk v3.0.0);
+- WPForms or Contact Form 7 for form-based subscriptions;
+- WooCommerce for checkout-based subscriptions; (classic checkout supported, block-based checkout experimentally supported).
 
-## Is this plugin free?
-Yes, 100%!
+## Privacy and Security
+The plugin records the IP address each subscriber. Subscribers through WooCommerce checkout do not require double opt-in, unlike form-based subscriptions. API credentials are stored securely on your server with encryption for the password. Please note that this plugin does not have any form of rate-limiting, so it is your own responsibilty to use a CATCHPA when using i.e. WPForms, to limit the amount of fake subscriptions that could be sent to your listmonk server.
 
-## What about privacy?
-For each users that subscribes to a mailing list, their IP address and is recorded as well as a timestamp of subscription time. For subscribers through the WooCommerce checkout, there is no double opt-in, but for people subscribing through a form there is a double opt-in. 
-
-## Dependency on external services
-This plugin uses two external services: (1) a listmonk server of your choice, for which you are solely responsible and (2) a link to [Buy me a Coffee](buymeacoffee.com) to voluntarily support the development of this plugin. See their privacy policy [here](https://www.buymeacoffee.com/privacy-policy). This plugin can be used without donating. This plugin does not store or use any customer data: this is all being handled by the listmonk server you connect to.
-
-## Contribute
-Feel free to submit an issue or pull request on [Github](https://github.com/post-duif/integration-listmonk-wordpress-plugin) if you have any questions or suggestions for improvement. If you have knowledge of the Listmonk API you can adapt this plugin to fit your specific needs (i.e. change all subscriptions to opt-in).
+## Suggestions, Bugs, and Contributions
+For bugs or suggestions, please create an issue on GitHub. Contributions, especially from those knowledgeable in PHP and the listmonk API, are welcome.
 
 ## License
 GNU General Public License v3.0. No commercial closed-source usage allowed.
@@ -52,8 +47,11 @@ GNU General Public License v3.0. No commercial closed-source usage allowed.
 ## Thanks
 Huge thanks to Kailash Nadh for creating listmonk!
 
+## Dependency on external services
+This plugin uses two external services: (1) a listmonk server of your choice, for which you are solely responsible and (2) a link to [Buy me a Coffee](buymeacoffee.com) to voluntarily support the development of this plugin. See their privacy policy [here](https://www.buymeacoffee.com/privacy-policy). This plugin can be used without donating. This plugin does not store or use any customer data: this is all being handled by the listmonk server you connect to.
+
 == Installation ==
-See FAQ and description. A listmonk server is required.
+Installation is straightforward. Upload the plugin to your WordPress plugin directory and configure it from the settings page.
 
 == Frequently Asked Questions ==
 # I don\'t have a listmonk server, will this plugin work?
@@ -76,6 +74,15 @@ Please submit an issue to the listmonk Github repository (I am not the maintaine
 
 # What form do I have to select when I use WPForms?
 The plugin only works with the default \"newsletter\" form, which has a first/last name field and an email field.
+
+# Where can I find the WPForms Form ID?
+Check the shortcode of the form you created. It should be formatted like "wpforms id=100", where 100 is the Form ID that you need to enter in the listmonk integration settings page.
+
+# What form do I have to select when I use Contact Form 7?
+Make sure the forms contains the fields 'your-email' and 'your-name' in order for this plugin to work.
+
+# How do I find the page ID for the Contact Form 7 integration?
+This refers to the page ID of the page you entered the Contact Form 7 shortcode on. If you edit that page in your WordPress admin panel, the url will contain for example "page=57". That number you will need to enter in the listmonk integration settings. 
 
 # I have a problem with this plugin, can you help me?
 I created this plugin in my free time. I may have time to help you, but no guarantees! 
