@@ -23,6 +23,7 @@ Customers can tick a checkbox on the WooCommerce checkout page to subscribe to y
 Or you can use a newsletter form created by the free third-party plugin WPForms:
 ![image](https://github.com/post-duif/integration-listmonk-wordpress-plugin/assets/126626953/bf17ae67-8617-4650-a5ed-d61901999d3c)
 
+Or use Contact Form 7 as an alternative option. 
 
 ## Requirements
 - A website running the latest version of WordPress;
