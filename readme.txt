@@ -93,4 +93,4 @@ I created this plugin in my free time. I may have time to help you, but no guara
 3. Newsletter subscription form example. Created with WPForms, data will be sent to your listmonk server.
 
 == Changelog ==
-1.2.0 First public version on the WordPress plugin directory
+1.3.2 First public version on the WordPress plugin directory

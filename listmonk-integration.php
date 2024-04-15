@@ -351,23 +351,28 @@ function listmonk_send_data_through_contact_form_7( $contact_form, $abort, $subm
 
     // check if the form id matches the form id from the settings page and if the listmonk form option is enabled
     if (get_option('listmonk_cf7_integration_on') != 'yes' || absint($contact_form->id()) !== $listmonk_cf7_form_id) { 
+        error_log('CF7 integration not enabled or id doesnt match');
+        error_log('Current page ID: ' . absint($contact_form->id()) .'');
+        error_log('CF7 page ID from listmonk settings: ' . $listmonk_cf7_form_id . '');
         return;
     }
 
     $posted_data = $submission->get_posted_data();
-
     $ip = listmonk_get_the_user_ip(); // define ip address of user, used for listmonk consent recording
 
     // Retrieve specific field data
     $email = isset($posted_data['your-email']) ? sanitize_text_field($posted_data['your-email']) : '';
     $name = isset($posted_data['your-name']) ? sanitize_email($posted_data['your-name']) : '';
+    error_log('Email: '  . $email. '');
+    error_log('Name: '  . $email. '');
 
     // Add your logic here to send data to listmonk
     
     // retrieve data to send to listmonk
     $website_name = sanitize_text_field(get_bloginfo( 'name' )); // Retrieves the website's name from the WordPress database
     $listmonk_list_id = absint(get_option('listmonk_list_id', 0)); // get listmonk list id from settings page
-
+    error_log('Listmonk list ID : '  . $listmonk_list_id . '');
+    
     ## for listmonk
     $attributes = [
         'subscription_origin' => 'Contact Form 7',
