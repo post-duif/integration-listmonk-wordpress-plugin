@@ -446,7 +446,11 @@ function listmonk_send_data_afer_checkout( $order_id ){
     } elseif ($order->get_meta('newsletter_optin') !== '' && $order->get_meta('newsletter_optin') !== false) {
         $subscribed = $order->get_meta('newsletter_optin');
     }
-    
+
+    if ($subscribed != 'true' && $subscribed != '1') { // if user did not give consent, return
+        return;
+    }
+
     // get user info from the woocommerce order API
     $email = sanitize_email($order->get_billing_email()); // Get Customer billing email
     $name = sanitize_text_field($order->get_billing_first_name()); // Get Customer billing first name
