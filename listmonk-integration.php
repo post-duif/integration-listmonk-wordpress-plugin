@@ -5,9 +5,9 @@ Text Domain: integration-for-listmonk
 Plugin URI: https://github.com/post-duif/integration-listmonk-wordpress-plugin
 Description: Connects the open source listmonk mailing list and newsletter service to WordPress and WooCommerce, so users can subscribe to your mailing lists through a form on your website or through WooCommerce checkout.
 Author: postduif
-Version: 1.3.2
+Version: 1.3.4
 Requires PHP: 7.4
-Requires at least: 6.0
+Requires at least: 6.3
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 */
@@ -524,7 +524,13 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
     if (listmonk_is_checkout_block_enabled() && get_option('listmonk_checkout_on') == 'yes') {
         echo '<div class="notice notice-warning">';
         echo '<p>The new <a href="' . esc_url('https://woo.com/checkout-blocks/') . '">WooCommerce checkout block</a> is enabled on your site. This plugin has experimental support for the blocks based checkout. If you experience any errors,
-        please <a href="' . esc_url('https://woo.com/document/cart-checkout-blocks-status/#section-7') . '">consider switching back to the old WooCommerce checkout experience</a> or disable the listmonk integration on WooCommerce checkout.</p>';
+        please <a href="' . esc_url('https://woo.com/document/cart-checkout-blocks-status/#section-7') . '">consider switching back to the old WooCommerce checkout experience</a> or disable the listmonk integration on WooCommerce checkout. You can file a bug report on <a href="https://github.com/post-duif/integration-listmonk-wordpress-plugin">Github</a>.</p>';
+        echo '</div>';
+    }
+
+    if(get_option('listmonk_cf7_integration_on') == 'yes') {
+        echo '<div class="notice notice-warning">';
+        echo '<p>The listmonk integration with Contact Form 7 is still experimental. If you experience any problems, consider switching to a newsletter subscription form by WPForms. You can also file a bug report on <a href="https://github.com/post-duif/integration-listmonk-wordpress-plugin">Github</a>.</p>';
         echo '</div>';
     }
 
@@ -541,7 +547,7 @@ function listmonk_integration_page_callback(){ // Function to render the plugin 
         </div>
             <!-- "Buy Me a Coffee" button -->
     <div style="margin-top: 20px; transform: scale(0.8); transform-origin: top left;">
-        <p><em>Enjoying this free & open source plugin?</em></p><a href="https://www.buymeacoffee.com/postduif" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+        <p><em>Enjoying this free & open source plugin? Consider donating, so development can continue:</em></p><a href="https://www.buymeacoffee.com/postduif" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
     </div>
     <?php
 }
