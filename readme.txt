@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/postduif
 Requires at least: 6.3
 Tested up to: 6.5.2
 Requires PHP: 7.4
-Stable tag: 1.3.5
+Stable tag: 1.3.6
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 
@@ -51,7 +51,7 @@ Huge thanks to Kailash Nadh for creating listmonk!
 This plugin uses two external services: (1) a listmonk server of your choice, for which you are solely responsible and (2) a link to [Buy me a Coffee](buymeacoffee.com) to voluntarily support the development of this plugin. See their privacy policy [here](https://www.buymeacoffee.com/privacy-policy). This plugin can be used without donating. This plugin does not store or use any customer data: this is all being handled by the listmonk server you connect to.
 
 == Installation ==
-Installation is straightforward. Upload the plugin to your WordPress plugin directory and configure it from the settings page.
+Installation is straightforward. Install the plugin from the WordPress plugin directory and configure it from the settings page: Integration for listmonk.
 
 == Frequently Asked Questions ==
 # I don't have a listmonk server, will this plugin work?
@@ -96,5 +96,6 @@ I created this plugin in my free time. I may have time to help you, but no guara
 3. Newsletter subscription form example. Created with WPForms, data will be sent to your listmonk server.
 
 == Changelog ==
+1.3.5 Bug fix with WooCommerce checkout
 1.3.4 Small changes, added a warning that CF7 support is still experimental
 1.3.3 First public version on the WordPress plugin directory

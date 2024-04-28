@@ -5,7 +5,7 @@ Text Domain: integration-for-listmonk
 Plugin URI: https://github.com/post-duif/integration-listmonk-wordpress-plugin
 Description: Connects the open source listmonk mailing list and newsletter service to WordPress and WooCommerce, so users can subscribe to your mailing lists through a form on your website or through WooCommerce checkout.
 Author: postduif
-Version: 1.3.5
+Version: 1.3.6
 Requires PHP: 7.4
 Requires at least: 6.3
 License: GNU General Public License v3.0
@@ -72,6 +72,13 @@ function listmonk_uninstall() {
 add_action('woocommerce_blocks_loaded','listmonk_add_newsletter_checkbox_to_blocks_checkout');
 
 // start of the code to add newsletter checkbox to checkout
+
+// nonce fx
+function listmonk_add_nonce_to_checkout() {
+    wp_nonce_field('listmonk_newsletter_nonce_action', 'listmonk_newsletter_nonce');
+}
+add_action('woocommerce_review_order_before_submit', 'listmonk_add_nonce_to_checkout');
+// end of nonce fix code
 
 function listmonk_initialize_listmonk_integration() {
     if (get_option('listmonk_checkout_on') !== 'yes') {
