@@ -5,7 +5,7 @@ Donate link: https://buymeacoffee.com/postduif
 Requires at least: 6.3
 Tested up to: 6.5.2
 Requires PHP: 7.4
-Stable tag: 1.3.4
+Stable tag: 1.3.5
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 
