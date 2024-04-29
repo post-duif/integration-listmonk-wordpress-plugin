@@ -79,9 +79,10 @@ function listmonk_initialize_listmonk_integration() {
     }
 
     add_filter('woocommerce_checkout_fields', 'listmonk_add_newsletter_checkbox_to_checkout'); // add newsletter checkbox to checkout
-    add_action('woocommerce_checkout_update_order_meta', 'listmonk_save_newsletter_subscription_checkbox'); // save newsletter checkbox value to order meta
+    add_action('woocommerce_checkout_order_processed', 'listmonk_save_newsletter_subscription_checkbox', 20); // save newsletter checkbox value to order meta
     add_action('woocommerce_admin_order_data_after_billing_address', 'listmonk_display_newsletter_subscription_in_admin_order_meta', 10, 1); // display newsletter checkbox value in admin order meta
-    add_action('woocommerce_checkout_update_order_review', 'listmonk_handle_newsletter_optin');
+    add_action('woocommerce_checkout_create_order', 'listmonk_handle_newsletter_optin', 10);
+
 }
 // initialize the listmonk integration
 add_action('wp_loaded', 'listmonk_initialize_listmonk_integration');
@@ -91,24 +92,24 @@ add_action('wp_loaded', 'listmonk_initialize_listmonk_integration');
 
 function listmonk_handle_newsletter_optin() {
     // Check if the checkbox 'listmonk_newsletter_optin' is set and equals '1'
-    if (isset($_POST['listmonk_newsletter_optin']) && $_POST['listmonk_newsletter_optin'] == '1') {
+    if (isset($_POST['listmonk_newsletter_optin']) && $_POST['listmonk_newsletter_optin'] == 1) {
         WC()->session->set('listmonk_newsletter_optin', true);
-        error_log('session set to true');
-        error_log('POST Data: ' . print_r($_POST['listmonk_newsletter_optin'], true));
+
     } else {
         WC()->session->set('listmonk_newsletter_optin', false);
-        error_log('session set to false');
-        //error_log('POST Data: ' . print_r($_POST['listmonk_newsletter_optin'], true));
     }
 }
 
 function listmonk_save_newsletter_subscription_checkbox($order_id) {
     $optin = WC()->session->get('listmonk_newsletter_optin', false);
-    if ($optin) {
+    if ($optin == 'true') {
         $order = wc_get_order($order_id);
         $order->update_meta_data('listmonk_newsletter_optin', 'true');
         $order->save();
-        error_log('saved to order as true');
+    }else{
+        $order = wc_get_order($order_id);
+        $order->update_meta_data('listmonk_newsletter_optin', 'false');
+        $order->save();
     }
 }
 
@@ -134,9 +135,6 @@ function listmonk_add_newsletter_checkbox_to_checkout($fields) {
         'clear'     => true,
         'priority'  => $email_priority + 2, // Slightly higher priority than email
     );
-
-    error_log('POST Data during execution of listmonk_add_newsletter_checkbox_to_checkout: ' . print_r($_POST['listmonk_newsletter_optin'], true));
-
     return $fields;
 }
 
@@ -447,8 +445,6 @@ function listmonk_send_data_afer_checkout( $order_id ){
 
     $order = wc_get_order( absint($order_id) ); // Get an instance of the WC_Order Object
     $additional_fields = $order->get_meta('_additional_fields', true);
-
-    error_log('POST Data during execution of listmonk_send_data_afer_checkout: ' . print_r($_POST['listmonk_newsletter_optin'], true));
 
     // check for user newsletter consent
    // $field_name = 'newsletter_optin'; // change this field to the name of your custom field for storing user consent in a checkbox
