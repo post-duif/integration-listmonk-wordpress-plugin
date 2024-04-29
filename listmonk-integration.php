@@ -136,6 +136,7 @@ function listmonk_add_newsletter_checkbox_to_checkout($fields) {
     $fields['billing']['listmonk_newsletter_optin'] = array(
         'type'      => 'checkbox',
         'label'     => $optin_label,  // Use the retrieved label text here
+        'id'        => 'listmonk_newsletter_optin',
         'required'  => false,
         'class'     => array('form-row-wide'),
         'clear'     => true,
