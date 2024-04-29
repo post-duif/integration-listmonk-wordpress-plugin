@@ -73,13 +73,6 @@ add_action('woocommerce_blocks_loaded','listmonk_add_newsletter_checkbox_to_bloc
 
 // start of the code to add newsletter checkbox to checkout
 
-// nonce fx
-function listmonk_add_nonce_to_checkout() {
-    wp_nonce_field('listmonk_newsletter_nonce_action', 'listmonk_newsletter_nonce');
-}
-add_action('woocommerce_review_order_before_submit', 'listmonk_add_nonce_to_checkout');
-// end of nonce fix code
-
 function listmonk_initialize_listmonk_integration() {
     if (get_option('listmonk_checkout_on') !== 'yes') {
         return;
@@ -88,19 +81,41 @@ function listmonk_initialize_listmonk_integration() {
     add_filter('woocommerce_checkout_fields', 'listmonk_add_newsletter_checkbox_to_checkout'); // add newsletter checkbox to checkout
     add_action('woocommerce_checkout_update_order_meta', 'listmonk_save_newsletter_subscription_checkbox'); // save newsletter checkbox value to order meta
     add_action('woocommerce_admin_order_data_after_billing_address', 'listmonk_display_newsletter_subscription_in_admin_order_meta', 10, 1); // display newsletter checkbox value in admin order meta
+    add_action('woocommerce_checkout_update_order_review', 'listmonk_handle_newsletter_optin');
 }
 // initialize the listmonk integration
 add_action('wp_loaded', 'listmonk_initialize_listmonk_integration');
 
 // add newsletter checkbox to checkout
 // this is for the old woocommerce checkout, not the blocks-based checkout
+
+function listmonk_handle_newsletter_optin() {
+    // Check if the checkbox 'listmonk_newsletter_optin' is set and equals '1'
+    if (isset($_POST['listmonk_newsletter_optin']) && $_POST['listmonk_newsletter_optin'] == '1') {
+        WC()->session->set('listmonk_newsletter_optin', true);
+        error_log('session set to true');
+        error_log('POST Data: ' . print_r($_POST['listmonk_newsletter_optin'], true));
+    } else {
+        WC()->session->set('listmonk_newsletter_optin', false);
+        error_log('session set to false');
+        //error_log('POST Data: ' . print_r($_POST['listmonk_newsletter_optin'], true));
+    }
+}
+
+function listmonk_save_newsletter_subscription_checkbox($order_id) {
+    $optin = WC()->session->get('listmonk_newsletter_optin', false);
+    if ($optin) {
+        $order = wc_get_order($order_id);
+        $order->update_meta_data('listmonk_newsletter_optin', 'true');
+        $order->save();
+        error_log('saved to order as true');
+    }
+}
+
 function listmonk_add_newsletter_checkbox_to_checkout($fields) {
     if(listmonk_is_checkout_block_enabled()) {
-        return; // Abort if the checkout block is enabled
+        return; // Abort if the WC blocks based checkout is enabled
     }
-
-    // Add the nonce field
-    wp_nonce_field('listmonk_newsletter_nonce_action', 'listmonk_newsletter_nonce');
 
     $email_priority = isset($fields['billing']['billing_email']['priority']) ? $fields['billing']['billing_email']['priority'] : 20;
     
@@ -111,7 +126,7 @@ function listmonk_add_newsletter_checkbox_to_checkout($fields) {
     if (empty($optin_label)) {
         $optin_label = __('Subscribe to our newsletter', 'integration-for-listmonk');
     }
-    $fields['billing']['newsletter_optin'] = array(
+    $fields['billing']['listmonk_newsletter_optin'] = array(
         'type'      => 'checkbox',
         'label'     => $optin_label,  // Use the retrieved label text here
         'required'  => false,
@@ -119,6 +134,8 @@ function listmonk_add_newsletter_checkbox_to_checkout($fields) {
         'clear'     => true,
         'priority'  => $email_priority + 2, // Slightly higher priority than email
     );
+
+    error_log('POST Data during execution of listmonk_add_newsletter_checkbox_to_checkout: ' . print_r($_POST['listmonk_newsletter_optin'], true));
 
     return $fields;
 }
@@ -151,24 +168,9 @@ function listmonk_add_newsletter_checkbox_to_blocks_checkout() {
     );
 }
 
-// save newsletter checkbox value to order meta
-// this is for the old woocommerce checkout, not the blocks-based checkout
-function listmonk_save_newsletter_subscription_checkbox($order_id) {
-    // Check if our nonce is set and verify it.
-    if (!isset($_POST['listmonk_newsletter_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['listmonk_newsletter_nonce'])), 'listmonk_newsletter_nonce_action')) {
-        // Nonce not verified
-        return;
-    }
-    $newsletter_optin = isset($_POST['newsletter_optin']) ? 'true' : 'false';
-
-    $order = wc_get_order($order_id);
-    $order->update_meta_data('newsletter_optin', $newsletter_optin);
-    $order->save();
-}
-
 // display newsletter checkbox value in admin order meta
 function listmonk_display_newsletter_subscription_in_admin_order_meta($order) {
-    $subscribed = $order->get_meta('newsletter_optin', true);
+    $subscribed = $order->get_meta('listmonk_newsletter_optin', true);
     $display_value = ($subscribed === 'true') ? 'Yes' : 'No'; // Display 'Yes' for 'true', 'No' otherwise`
     echo '<p><strong>' . esc_html__('Newsletter subscription consent (listmonk):', 'integration-for-listmonk') . '</strong> ' . esc_html($display_value) . '</p>';
 }
@@ -445,13 +447,20 @@ function listmonk_send_data_afer_checkout( $order_id ){
 
     $order = wc_get_order( absint($order_id) ); // Get an instance of the WC_Order Object
     $additional_fields = $order->get_meta('_additional_fields', true);
+
+    error_log('POST Data during execution of listmonk_send_data_afer_checkout: ' . print_r($_POST['listmonk_newsletter_optin'], true));
+
     // check for user newsletter consent
    // $field_name = 'newsletter_optin'; // change this field to the name of your custom field for storing user consent in a checkbox
-    
+    $subscribed = '';
     if (is_array($additional_fields) && isset($additional_fields['listmonk/newsletter_optin'])) {
         $subscribed = $additional_fields['listmonk/newsletter_optin'];
-    } elseif ($order->get_meta('newsletter_optin') !== '' && $order->get_meta('newsletter_optin') !== false) {
-        $subscribed = $order->get_meta('newsletter_optin');
+        error_log($subscribed);
+    } elseif ($order->get_meta('listmonk_newsletter_optin') !== '' && $order->get_meta('listmonk_newsletter_optin') !== false) {
+        $subscribed = $order->get_meta('listmonk_newsletter_optin');
+        error_log($subscribed);
+    }else{
+        $subscribed == false;
     }
 
     if ($subscribed != 'true' && $subscribed != '1') { // if user did not give consent, return
