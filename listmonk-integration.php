@@ -91,6 +91,9 @@ add_action('wp_loaded', 'listmonk_initialize_listmonk_integration');
 // this is for the old woocommerce checkout, not the blocks-based checkout
 
 function listmonk_handle_newsletter_optin() {
+    if(listmonk_is_checkout_block_enabled()) {
+        return; // Abort if the WC blocks based checkout is enabled
+    }
     // Check if the checkbox 'listmonk_newsletter_optin' is set and equals '1'
     if (isset($_POST['listmonk_newsletter_optin']) && $_POST['listmonk_newsletter_optin'] == 1) {
         WC()->session->set('listmonk_newsletter_optin', true);
@@ -101,6 +104,9 @@ function listmonk_handle_newsletter_optin() {
 }
 
 function listmonk_save_newsletter_subscription_checkbox($order_id) {
+    if(listmonk_is_checkout_block_enabled()) {
+        return; // Abort if the WC blocks based checkout is enabled
+    }
     $optin = WC()->session->get('listmonk_newsletter_optin', false);
     if ($optin == 'true') {
         $order = wc_get_order($order_id);
