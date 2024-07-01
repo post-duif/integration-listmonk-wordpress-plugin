@@ -66,6 +66,8 @@ function listmonk_uninstall() {
     delete_option('listmonk_optin_text');
     delete_option('listmonk_cf7_integration_on');
     delete_option('listmonk_cf7_form_id');
+    delete_option('listmonk_debug');
+
 
 }
 
@@ -365,7 +367,17 @@ add_action( 'wpforms_process_complete', 'listmonk_send_data_through_wpforms', 10
 
         // check if the form id matches the form id from the settings page and if the listmonk form option is enabled
         if (get_option('listmonk_cf7_integration_on') != 'yes' || absint($contact_form->id()) !== $listmonk_cf7_form_id) { 
+            if(get_option('listmonk_debug') == 'yes'){
+                error_log('CF7 integration not enabled or id doesnt match');
+                error_log('Current page ID: ' . absint($contact_form->id()) .'');
+                error_log('CF7 page ID from listmonk settings: ' . $listmonk_cf7_form_id . '');
+            }
             return;
+        }else{
+            if(get_option('listmonk_debug') == 'yes'){
+                error_log('Current page ID: ' . absint($contact_form->id()) .'');
+                error_log('CF7 page ID from listmonk settings: ' . $listmonk_cf7_form_id . '');
+            }
         }
 
         $posted_data = $submission->get_posted_data();
@@ -380,8 +392,9 @@ add_action( 'wpforms_process_complete', 'listmonk_send_data_through_wpforms', 10
         // retrieve data to send to listmonk
         $website_name = sanitize_text_field(get_bloginfo( 'name' )); // Retrieves the website's name from the WordPress database
         $listmonk_list_id = absint(get_option('listmonk_list_id', 0)); // get listmonk list id from settings page
-        error_log('Listmonk list ID : '  . $listmonk_list_id . '');
-        
+        if(get_option('listmonk_debug') == 'yes'){
+            error_log('Listmonk list ID : '  . $listmonk_list_id . '');
+        }        
         ## for listmonk
         $attributes = [
             'subscription_origin' => 'Contact Form 7',
@@ -458,10 +471,14 @@ function listmonk_send_data_afer_checkout( $order_id ){
     $subscribed = '';
     if (is_array($additional_fields) && isset($additional_fields['listmonk/newsletter_optin'])) {
         $subscribed = $additional_fields['listmonk/newsletter_optin'];
-        error_log($subscribed);
+        if(get_option('listmonk_debug') == 'yes'){
+            error_log($subscribed);
+        }
     } elseif ($order->get_meta('listmonk_newsletter_optin') !== '' && $order->get_meta('listmonk_newsletter_optin') !== false) {
         $subscribed = $order->get_meta('listmonk_newsletter_optin');
-        error_log($subscribed);
+        if(get_option('listmonk_debug') == 'yes'){
+            error_log($subscribed);
+        }
     }else{
         $subscribed == false;
     }
@@ -672,6 +689,14 @@ function listmonk_settings_fields(){
         $page_slug // Page slug
     );
 
+    // Add 'listmonk Credentials' section
+    add_settings_section(
+        'listmonk_debug_section', // Section ID
+        'Debug mode', // Section title
+        'listmonk_debug_description', // Callback for section description
+        $page_slug // Page slug
+    );
+
     // Register and add settings fields
     register_setting($option_group, 'listmonk_checkout_on', 'listmonk_sanitize_checkbox');
     add_settings_field(
@@ -763,6 +788,17 @@ function listmonk_settings_fields(){
         array('name' => 'listmonk_password')
     );
 
+    // Register and add settings fields
+    register_setting($option_group, 'listmonk_debug', 'listmonk_sanitize_checkbox');
+    add_settings_field(
+        'listmonk_debug',
+        'Debug mode:',
+        'listmonk_render_checkbox_field',
+        $page_slug,
+        'listmonk_debug_section',
+        array('name' => 'listmonk_debug')
+    );
+
     // Register and add settings fields for extra textbox
     register_setting($option_group, 'listmonk_optin_text', 'sanitize_text_field');
     add_settings_field(
@@ -791,6 +827,11 @@ function listmonk_plugin_components_description() { // Function to render the de
 function listmonk_credentials_description() { // Function to render the description for the 'listmonk Credentials' section
     echo '<p>' . esc_html__('In order for the integration to work, you need to provide your listmonk credentials. First input the listmonk list ID you want to 
     send all new subscribers to. This ID is shown in listmonk when you click on a list. Second, you input the url of your listmonk server. Third, you input your listmonk username and password for authentication.', 'integration-for-listmonk') . '</p>';
+}
+
+// Description for the 'listmonk Credentials' section
+function listmonk_debug_description() { // Function to render the description for the 'listmonk Credentials' section
+    echo '<p>' . esc_html__('Debug mode can be enabled here. When enabled, debug information will be rendered in the WordPress log file.') . '</p>';
 }
 
 // Hook into the admin_enqueue_scripts action
