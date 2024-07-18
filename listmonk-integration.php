@@ -164,7 +164,7 @@ function listmonk_add_newsletter_checkbox_to_blocks_checkout() {
         $optin_label = __('Subscribe to our newsletter', 'integration-for-listmonk');
     }
 
-    __experimental_woocommerce_blocks_register_checkout_field(
+    woocommerce_register_additional_checkout_field(
         array(
             'id'       => 'listmonk/newsletter_optin',
             'label'    => $optin_label,
@@ -469,19 +469,29 @@ function listmonk_send_data_afer_checkout( $order_id ){
     // check for user newsletter consent
    // $field_name = 'newsletter_optin'; // change this field to the name of your custom field for storing user consent in a checkbox
     $subscribed = '';
-    if (is_array($additional_fields) && isset($additional_fields['listmonk/newsletter_optin'])) {
-        $subscribed = $additional_fields['listmonk/newsletter_optin'];
-        if(get_option('listmonk_debug') == 'yes'){
-            error_log($subscribed);
+
+    if (listmonk_is_checkout_block_enabled()) {
+        $subscribed = $order->get_meta('_wc_other/listmonk/newsletter_optin', true);
+
+        if (isset($subscribed) == false) {
+            $subscribed = false;
         }
-    } elseif ($order->get_meta('listmonk_newsletter_optin') !== '' && $order->get_meta('listmonk_newsletter_optin') !== false) {
-        $subscribed = $order->get_meta('listmonk_newsletter_optin');
-        if(get_option('listmonk_debug') == 'yes'){
-            error_log($subscribed);
+    } else {
+        if (is_array($additional_fields) && isset($additional_fields['listmonk/newsletter_optin'])) {
+            $subscribed = $additional_fields['listmonk/newsletter_optin'];
+            if(get_option('listmonk_debug') == 'yes'){
+                error_log($subscribed);
+            }
+        } elseif ($order->get_meta('listmonk_newsletter_optin') !== '' && $order->get_meta('listmonk_newsletter_optin') !== false) {
+            $subscribed = $order->get_meta('listmonk_newsletter_optin');
+            if(get_option('listmonk_debug') == 'yes'){
+                error_log($subscribed);
+            }
+        }else{
+            $subscribed == false;
         }
-    }else{
-        $subscribed == false;
     }
+    
 
     if ($subscribed != 'true' && $subscribed != '1') { // if user did not give consent, return
         return;
