@@ -571,12 +571,6 @@ function listmonk_top_lvl_menu(){
 function listmonk_integration_page_callback(){ // Function to render the plugin settings page
 
     // Display warning if both conditions are met
-    if (listmonk_is_checkout_block_enabled() && get_option('listmonk_checkout_on') == 'yes') {
-        echo '<div class="notice notice-warning">';
-        echo '<p>The new <a href="' . esc_url('https://woo.com/checkout-blocks/') . '">WooCommerce checkout block</a> is enabled on your site. This plugin has experimental support for the blocks based checkout. If you experience any errors,
-        please <a href="' . esc_url('https://woo.com/document/cart-checkout-blocks-status/#section-7') . '">consider switching back to the old WooCommerce checkout experience</a> or disable the listmonk integration on WooCommerce checkout. You can file a bug report on <a href="https://github.com/post-duif/integration-listmonk-wordpress-plugin">Github</a>.</p>';
-        echo '</div>';
-    }
 
     if(get_option('listmonk_cf7_integration_on') == 'yes') {
         echo '<div class="notice notice-warning">';
