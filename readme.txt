@@ -3,9 +3,9 @@ Contributors: postduif
 Tags: listmonk, newsletter, WordPress, WooCommerce, subscribers, mail, mailing, api
 Donate link: https://buymeacoffee.com/postduif
 Requires at least: 6.3
-Tested up to: 6.5.2
+Tested up to: 6.6.1
 Requires PHP: 7.4
-Stable tag: 1.3.7
+Stable tag: 1.4.0
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 
