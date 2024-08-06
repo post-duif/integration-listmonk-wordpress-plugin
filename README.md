@@ -29,7 +29,7 @@ Or use Contact Form 7 as an alternative option.
 - A website running the latest version of WordPress;
 - A listmonk server accessible over HTTPS; (tested up to listmonk v3.0.0);
 - For using this plugin with a form that people can fill in to subscribe to your mailing list, you should have the free WPForms plugin installed and choose their standard newsletter form. Input that form ID in the settings page of this plugin. Recently support for Contact Forms 7 was also added;
-- For using this plugin to let customers subscribe to your mailing list during WooCommerce checkout, you need to use the old WooCommerce checkout. WooCommerce block based checkout is experimentally supported.
+- For using this plugin to let customers subscribe to your mailing list during WooCommerce checkout, you need to have WooCommerce installed and the component activated in the plugin settings.
 
 ## What about privacy?
 For each user that subscribes to a mailing list, their IP address and is recorded as well as a timestamp of subscription time. Subscribers through the WooCommerce checkout do not have to double opt-in, but people subscribing through a form need to confirm their subscription to avoid spam. When people subscribe through WooCommerce checkout, their country is also saved to listmonk. 
