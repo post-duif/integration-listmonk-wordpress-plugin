@@ -228,6 +228,9 @@ function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $usernam
         'method'  => 'POST'
     );
 
+    // add an action hook here. Pass the data to a hook to achieve function like send welcome email etc. Not a safe choice since it contains the username/password. Better to rewrite the data sending function. Probably will do later.
+    do_action('integration_listmonk_before_send_data_to_server', $url, $body, $headers);
+
     // Make the request
     $response = wp_remote_post($url, $args);
 
@@ -298,13 +301,23 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
     if (!listmonk_are_listmonk_settings_configured()) {
         return; // Abort if settings are not configured
     }
+
     $listmonk_wpforms_form_id = absint(get_option('listmonk_wpforms_form_id')); // convert form id from option to integer
+    $listmonk_wpforms_name_field_id = absint(get_option('listmonk_wpforms_name_field_id')); // convert wpform's name field id from option to integer
+    $listmonk_wpforms_email_field_id = absint(get_option('listmonk_wpforms_email_field_id')); // convert wpform's email field id from option to integer
     $listmonk_wpforms_integration_on = sanitize_text_field(get_option('listmonk_wpforms_integration_on')); // check if the listmonk form option is disabled in settings
 
     // check if the form id matches the form id from the settings page and if the listmonk form option is enabled
     if (get_option('listmonk_wpforms_integration_on') != 'yes' || absint($form_data['id']) !== $listmonk_wpforms_form_id) { 
         return;
     }
+
+
+    // set default value for listmonk_wpforms_email_field_id
+    if ( $listmonk_wpforms_email_field_id == 0 ){
+        $listmonk_wpforms_email_field_id = 2;
+    }
+
 
     // define variables
     $ip = listmonk_get_the_user_ip(); // define ip address of user, used for listmonk consent recording
@@ -324,14 +337,19 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
     $replacement = '[removed]';
 
     // sanitize name input
-    $name = sanitize_text_field(wp_strip_all_tags($fields['1']['value'])); // get name from form; this assumes it is the first field in the form
+    if( $listmonk_wpforms_email_field_id != 0 ){
+        $name = sanitize_text_field(wp_strip_all_tags($fields[$listmonk_wpforms_name_field_id]['value'])); // get name from form if there is a name field
+    } else {
+        $name = '';
+    }
+    
     $name_email_stripped = preg_replace($pattern, $replacement, $name); // remove email from name field input
     $name_stripped_all = preg_replace('/[a-zA-Z]*[:\/\/]*[A-Za-z0-9\-_]+\.+[A-Za-z0-9\.\/%&=\?\-_]+/i', $replacement, $name_email_stripped); // remove urls from name field input
 
     // this body will be sent to listmonk 
     $body = array(
 		'name' => $name_stripped_all, // get name from form
-		'email' => sanitize_email($fields['2']['value']), // get email from form, this assumes it is the second field in the form
+		'email' => sanitize_email($fields[$listmonk_wpforms_email_field_id]['value']), // get email from form, this assumes it is the second field in the form by default, and get the field id from plugin option
         'status' => 'enabled', // set to enabled to subscribe user
         'lists' => [(int)$listmonk_list_id], // convert list id to integer
         'preconfirm_subscriptions' => false, // set to true if you want to send a confirmation email to the user
@@ -660,6 +678,35 @@ function listmonk_sanitize_list_id($input){ // Function to sanitize the listmonk
     return $new_input;
 }
 
+// Sanitize and validate the list ID
+function listmonk_sanitize_wpforms_name_field_id($input){ // Function to sanitize the listmonk list ID
+    $new_input = absint($input);
+    if ($new_input < 0) {
+        add_settings_error(
+            'listmonk_wpforms_name_id', 
+            'invalid_listmonk_wpforms_name_id', 
+            'wpforms name field ID should be a positive number.' // Error message
+        );
+        return get_option('listmonk_wpforms_name_field_id'); // Return the previous value
+    }
+    return $new_input;
+}
+
+// Sanitize and validate the list ID
+function listmonk_sanitize_wpforms_email_field_id($input){ // Function to sanitize the listmonk list ID
+    $new_input = absint($input);
+    if ($new_input < 0) {
+        add_settings_error(
+            'listmonk_wpforms_email_id', 
+            'invalid_listmonk_wpforms_email_id', 
+            'wpforms email field ID should be a positive number.' // Error message
+        );
+        return get_option('listmonk_wpforms_email_field_id'); // Return the previous value
+    }
+    return $new_input;
+}
+
+
 function listmonk_sanitize_listmonk_password($input){ // Function to sanitize the listmonk password
     if (empty($input)) {
         return get_option('listmonk_password');
@@ -740,6 +787,26 @@ function listmonk_settings_fields(){
         $page_slug,
         'listmonk_plugin_components',
         array('name' => 'listmonk_wpforms_form_id')
+    );
+// Register and add settings fields
+    register_setting($option_group, 'listmonk_wpforms_name_field_id', 'listmonk_sanitize_wpforms_name_field_id');
+    add_settings_field(
+        'listmonk_wpforms_name_field_id',
+        'WPForms Form\'s name field ID:',
+        'listmonk_render_wpforms_name_field_id_field',
+        $page_slug,
+        'listmonk_plugin_components',
+        array('name' => 'listmonk_wpforms_name_field_id')
+    );
+// Register and add settings fields
+    register_setting($option_group, 'listmonk_wpforms_email_field_id', 'listmonk_sanitize_wpforms_email_field_id');
+    add_settings_field(
+        'listmonk_wpforms_email_field_id',
+        'WPForms Form\'s email field ID:',
+        'listmonk_render_wpforms_email_field_id_field',
+        $page_slug,
+        'listmonk_plugin_components',
+        array('name' => 'listmonk_wpforms_email_field_id')
     );
 // Register and add settings fields
     register_setting($option_group, 'listmonk_cf7_form_id', 'listmonk_sanitize_list_id');
@@ -962,6 +1029,26 @@ function listmonk_render_wpforms_form_id_field($args) {
 
     echo '<input class="listmonk-number-input" type="number" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . esc_attr($disabled) . ' />';
     echo '<p class="description">' . esc_html__('Enter the WPForms Form ID here. This ID is used when listmonk integration with WPForms is enabled.', 'integration-for-listmonk') . '</p>';
+}
+
+// Function to render WPForms name field ID field
+function listmonk_render_wpforms_name_field_id_field($args) {
+    $option_name = esc_attr($args['name']);
+    $value = esc_attr(get_option($option_name, '')); // Default value if option is not set
+    $disabled = get_option('listmonk_wpforms_integration_on') !== 'yes' ? 'readonly' : '';
+
+    echo '<input class="listmonk-number-input" type="number" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . esc_attr($disabled) . ' />';
+    echo '<p class="description">' . esc_html__('Enter the WPForms Form Name Field ID here. Set to 0 if there is no name field. This ID is used when listmonk integration with WPForms is enabled.', 'integration-for-listmonk') . '</p>';
+}
+
+// Function to render WPForms email field ID field
+function listmonk_render_wpforms_email_field_id_field($args) {
+    $option_name = esc_attr($args['name']);
+    $value = esc_attr(get_option($option_name, '')); // Default value if option is not set
+    $disabled = get_option('listmonk_wpforms_integration_on') !== 'yes' ? 'readonly' : '';
+
+    echo '<input class="listmonk-number-input" type="number" id="' . esc_attr($option_name) . '" name="' . esc_attr($option_name) . '" value="' . esc_attr($value) . '" ' . esc_attr($disabled) . ' />';
+    echo '<p class="description">' . esc_html__('Enter the WPForms Form Email Field ID here. This ID is used when listmonk integration with WPForms is enabled.', 'integration-for-listmonk') . '</p>';
 }
 
 // Function to render Contact Form 7 ID field
