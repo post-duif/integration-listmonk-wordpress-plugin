@@ -384,8 +384,8 @@ add_action( 'wpforms_process_complete', 'listmonk_send_data_through_wpforms', 10
         $ip = listmonk_get_the_user_ip(); // define ip address of user, used for listmonk consent recording
 
         // Retrieve specific field data
-        $email = isset($posted_data['your-email']) ? sanitize_text_field($posted_data['your-email']) : '';
-        $name = isset($posted_data['your-name']) ? sanitize_email($posted_data['your-name']) : '';
+        $email = isset($posted_data['your-email']) ? sanitize_email($posted_data['your-email']) : '';
+        $name = isset($posted_data['your-name']) ? sanitize_text_field($posted_data['your-name']) : '';
 
         // Add your logic here to send data to listmonk
         
