@@ -5,9 +5,9 @@ Text Domain: integration-for-listmonk
 Plugin URI: https://github.com/post-duif/integration-listmonk-wordpress-plugin
 Description: Connects the open source listmonk mailing list and newsletter service to WordPress and WooCommerce, so users can subscribe to your mailing lists through a form on your website or through WooCommerce checkout.
 Author: postduif
-Version: 1.4.0
+Version: 1.4.1
 Requires PHP: 7.4
-Requires at least: 6.3
+Requires at least: 6.4
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 */
@@ -775,7 +775,7 @@ function listmonk_settings_fields(){
     register_setting($option_group, 'listmonk_username', 'sanitize_text_field');
     add_settings_field(
         'listmonk_username',
-        'listmonk username:',
+        'listmonk API username:',
         'listmonk_render_text_field',
         $page_slug,
         'listmonk_credentials',
@@ -785,7 +785,7 @@ function listmonk_settings_fields(){
     register_setting($option_group, 'listmonk_password', 'listmonk_sanitize_listmonk_password');
     add_settings_field(
         'listmonk_password',
-        'listmonk password:',
+        'listmonk API access token:',
         'listmonk_render_text_field',
         $page_slug,
         'listmonk_credentials',
@@ -830,7 +830,7 @@ function listmonk_plugin_components_description() { // Function to render the de
 // Description for the 'listmonk Credentials' section
 function listmonk_credentials_description() { // Function to render the description for the 'listmonk Credentials' section
     echo '<p>' . esc_html__('In order for the integration to work, you need to provide your listmonk credentials. First input the listmonk list ID you want to 
-    send all new subscribers to. This ID is shown in listmonk when you click on a list. Second, you input the url of your listmonk server. Third, you input your listmonk username and password for authentication.', 'integration-for-listmonk') . '</p>';
+    send all new subscribers to. This ID is shown in listmonk when you click on a list. Second, you input the url of your listmonk server. Third, you input your listmonk API username and API access token for authentication. For this you need to create a new user in listmonk settings under Users. Starting with recent version of listmonk this needs to be a new API user: you cannot use the username and password you use to login to the listmonk admin page.', 'integration-for-listmonk') . '</p>';
 }
 
 // Description for the 'listmonk Credentials' section
@@ -882,7 +882,7 @@ function listmonk_render_text_field($args){
         $field_type = 'password';
         $autocomplete = 'autocomplete="new-password"'; // Set autocomplete attribute for password field
         $placeholder = 'Enter new password to change'; // Informative placeholder text for the password field
-        $help_text = '<p class="description">' . esc_html__('Leave blank to keep the current password.', 'integration-for-listmonk') . '</p>';// Help text for the password field
+        $help_text = '<p class="description">' . esc_html__('Leave blank to keep the current API access token.', 'integration-for-listmonk') . '</p>';// Help text for the password field
     } else if ($args['name'] == 'listmonk_username') {
         $autocomplete = 'autocomplete="username"'; // Set autocomplete attribute for username field
     }
