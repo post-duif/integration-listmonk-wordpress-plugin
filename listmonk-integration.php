@@ -7,7 +7,7 @@ Description: Connects the open source listmonk mailing list and newsletter servi
 Author: postduif
 Version: 1.4.1
 Requires PHP: 7.4
-Requires at least: 6.4
+Requires at least: 6.
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 */
@@ -296,6 +296,7 @@ function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $usernam
 // this function sends WPforms data to an external API (listmonk) through https
 function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry_id ) {
     if (!listmonk_are_listmonk_settings_configured()) {
+        error_log("listmonk settings are not configured completely."); // Log an error message
         return; // Abort if settings are not configured
     }
     $listmonk_wpforms_form_id = absint(get_option('listmonk_wpforms_form_id')); // convert form id from option to integer
@@ -360,6 +361,7 @@ add_action( 'wpforms_process_complete', 'listmonk_send_data_through_wpforms', 10
 
     function listmonk_send_data_through_contact_form_7( $contact_form, $abort, $submission ) {
         if (!listmonk_are_listmonk_settings_configured()) {
+            error_log("listmonk settings are not configured completely."); // Log an error message
             return; // Abort if settings are not configured
         }
         $listmonk_cf7_form_id = absint(get_option('listmonk_cf7_form_id')); // convert form id from option to integer
@@ -460,6 +462,7 @@ function listmonk_send_data_afer_checkout( $order_id ){
     }
 
     if (!listmonk_are_listmonk_settings_configured()) {
+        error_log("listmonk settings are not configured completely.");
         return; // Abort if settings are not configured
     }
 
@@ -660,14 +663,19 @@ function listmonk_sanitize_list_id($input){ // Function to sanitize the listmonk
     return $new_input;
 }
 
-function listmonk_sanitize_listmonk_password($input){ // Function to sanitize the listmonk password
+function listmonk_sanitize_listmonk_password($input){
+    $existing = get_option('listmonk_password', false);
     if (empty($input)) {
-        return get_option('listmonk_password');
+        // If there is already a password saved, keep it
+        if ($existing !== false && $existing !== '') {
+            return $existing;
+        }
+        // If not, don't save anything (prevents saving an empty password)
+        return '';
     }
     // Encrypt the new password
     $encryption = new listmonk_FSD_Data_Encryption();
     $encrypted_password = $encryption->encrypt(sanitize_text_field($input));
-
     return $encrypted_password;
 }
 
