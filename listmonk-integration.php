@@ -7,7 +7,7 @@ Description: Connects the open source listmonk mailing list and newsletter servi
 Author: postduif
 Version: 1.4.1
 Requires PHP: 7.4
-Requires at least: 6.
+Requires at least: 6.4
 License: GNU General Public License v3.0
 License URI: https://www.gnu.org/licenses/gpl-3.0.html#license-textf
 */
@@ -546,7 +546,7 @@ function listmonk_send_data_afer_checkout( $order_id ){
     $response = listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $listmonk_username, $listmonk_password);
 
     if ($response['status_code'] == 200) {
-        $order->add_order_note('Customer subscribed to listmonk mailing list (ID = ' . $listmonk_list_id . ').');
+        $order->add_order_note('Listmonk: customer subscribed to listmonk mailing list (ID = ' . $listmonk_list_id . ').');
     }elseif($response['status_code'] == 409) {
         $order->add_order_note('Listmonk: Email address already exists in listmonk mailing list ' . $listmonk_list_id . ', customer had already subscribed.');
     }else{
