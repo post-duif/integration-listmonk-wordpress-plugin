@@ -123,7 +123,7 @@ function listmonk_save_newsletter_subscription_checkbox($order_id) {
 
 function listmonk_add_newsletter_checkbox_to_checkout($fields) {
     if(listmonk_is_checkout_block_enabled()) {
-        return; // Abort if the WC blocks based checkout is enabled
+        return $fields; // Abort if the WC blocks based checkout is enabled
     }
 
     $email_priority = isset($fields['billing']['billing_email']['priority']) ? $fields['billing']['billing_email']['priority'] : 20;
