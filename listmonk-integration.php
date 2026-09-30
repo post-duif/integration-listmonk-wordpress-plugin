@@ -211,7 +211,7 @@ function listmonk_are_listmonk_settings_configured() {
 }
 
 ## function to send data to listmonk through WordPress HTTP API
-function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $username, $password) {
+function listmonk_send_data_to_listmonk_wordpress_http_api($url, $method, $body, $username, $password) {
     // Sanitize the URL
     $url = esc_url_raw(filter_var($url, FILTER_VALIDATE_URL));
 
@@ -223,13 +223,13 @@ function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $usernam
 
     // Setup the body and headers
     $args = array(
-        'body'    => json_encode($body),
+        'body'    => $body ? json_encode( $body ) : null,
         'headers' => $headers,
-        'method'  => 'POST'
+        'method'  => $method,
     );
 
     // Make the request
-    $response = wp_remote_post($url, $args);
+    $response = wp_remote_request( $url, $args );
 
     // Check for error in response
     if (is_wp_error($response)) {
@@ -293,6 +293,78 @@ function listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $usernam
     ];
 }
 
+function listmonk_get_subscriber_id( $email, $listmonk_url, $listmonk_username, $listmonk_password ) {
+    // Prevent SQL injection
+    if ( ! filter_var( $email, FILTER_VALIDATE_EMAIL ) ) {
+        error_log( "listmonk invalid email: $email" );
+
+        return null;
+    }
+    $query_encoded           = urlencode( "subscribers.email = '$email'" );
+    $get_subscriber_url      = "$listmonk_url/api/subscribers?query=$query_encoded";
+    $get_subscriber_response = listmonk_send_data_to_listmonk_wordpress_http_api( $get_subscriber_url, 'GET', null, $listmonk_username, $listmonk_password );
+    if ( $get_subscriber_response['status_code'] !== 200 ) {
+        return null;
+    }
+    if ( $get_subscriber_response['body']['data'] == null || ! is_array( $get_subscriber_response['body']['data']['results'] ) ) {
+        error_log( "listmonk invalid response from API: no results" );
+
+        return null;
+    }
+    $subscribers = $get_subscriber_response['body']['data']['results'];
+    if ( count( $subscribers ) != 1 ) {
+        error_log( "listmonk invalid response from API: amount of subscribers not 1: " . count( $subscribers ) );
+
+        return null;
+    }
+    $subscriber_id = $subscribers[0]['id'];
+    if ( ! is_int( $subscriber_id ) ) {
+        error_log( "listmonk invalid response from API: id is not an integer" );
+
+        return null;
+    }
+
+    return $subscriber_id;
+}
+
+function listmonk_subscribe( $ids, $list_ids, $listmonk_url, $listmonk_username, $listmonk_password ) {
+    $body = array(
+            'ids'             => $ids,
+            'action'          => 'add',
+            'target_list_ids' => $list_ids,
+            'status'          => 'unconfirmed',
+    );
+    listmonk_send_data_to_listmonk_wordpress_http_api( $listmonk_url . '/api/subscribers/lists', 'PUT', $body, $listmonk_username, $listmonk_password );
+}
+
+function listmonk_add_subscriber( $body ) {
+    #listmonk credentials
+    $listmonk_url      = esc_url_raw( get_option( 'listmonk_url' ) );
+    $listmonk_username = sanitize_text_field( get_option( 'listmonk_username' ) );
+
+    ## password decryption using the fsd-data-encryption class
+    $encryption         = new listmonk_FSD_Data_Encryption();
+    $encrypted_password = sanitize_text_field( get_option( 'listmonk_password' ) );
+    $listmonk_password  = $encryption->decrypt( $encrypted_password );
+
+    // append the url from the settings page
+    $url = $listmonk_url . '/api/subscribers';
+
+    // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through WordPress HTTP API
+    $response = listmonk_send_data_to_listmonk_wordpress_http_api( $url, 'POST', $body, $listmonk_username, $listmonk_password );
+
+    if ( $response['status_code'] === 409 ) {
+        $email         = $body['email'];
+        $subscriber_id = listmonk_get_subscriber_id( $email, $listmonk_url, $listmonk_username, $listmonk_password );
+        if ( $subscriber_id == null ) {
+            return $response;
+        }
+        listmonk_subscribe( [ $subscriber_id ], $body['lists'], $listmonk_url, $listmonk_username, $listmonk_password );
+    }
+
+    return $response;
+}
+
 // this function sends WPforms data to an external API (listmonk) through https
 function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry_id ) {
     if (!listmonk_are_listmonk_settings_configured()) {
@@ -339,21 +411,7 @@ function listmonk_send_data_through_wpforms( $fields, $entry, $form_data, $entry
         'attribs' => $attributes,   
 	);
 
-    #listmonk credentials
-    $listmonk_url = esc_url_raw(get_option('listmonk_url'));
-    $listmonk_username = sanitize_text_field(get_option('listmonk_username'));
-
-    ## password decryption
-    $encryption = new listmonk_FSD_Data_Encryption();
-    $encrypted_password = sanitize_text_field(get_option('listmonk_password'));
-    $listmonk_password = $encryption->decrypt($encrypted_password);
-
-    // append the url from the settings page with the correct API endpoint
-    $url = $listmonk_url . '/api/subscribers';    
-    
-    // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through WordPress HTTP API
-    listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $listmonk_username, $listmonk_password);
-
+    listmonk_add_subscriber($body);
 }
 add_action( 'wpforms_process_complete', 'listmonk_send_data_through_wpforms', 10, 4 );
 
@@ -424,21 +482,7 @@ add_action( 'wpforms_process_complete', 'listmonk_send_data_through_wpforms', 10
             'preconfirm_subscriptions' => false, // set presubscription to false, because anyone can enter an email here
         ) ;
 
-        #listmonk credentials
-        $listmonk_url = esc_url_raw(get_option('listmonk_url'));
-        $listmonk_username = sanitize_text_field(get_option('listmonk_username'));
-
-        ## password decryption using the fsd-data-encryption class
-        $encryption = new listmonk_FSD_Data_Encryption();
-        $encrypted_password = sanitize_text_field(get_option('listmonk_password'));
-        $listmonk_password = $encryption->decrypt($encrypted_password);
-        
-        // append the url from the settings page
-        $url = $listmonk_url . '/api/subscribers';
-
-        // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through WordPress HTTP API
-
-        $response = listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $listmonk_username, $listmonk_password);
+        listmonk_add_subscriber($body);
 
         // Optionally skip sending the email
         // add_filter('wpcf7_skip_mail', function() { return true; });
@@ -529,21 +573,7 @@ function listmonk_send_data_afer_checkout( $order_id ){
         'preconfirm_subscriptions' => true,
      ) ;
 
-    #listmonk credentials
-    $listmonk_url = esc_url_raw(get_option('listmonk_url'));
-    $listmonk_username = sanitize_text_field(get_option('listmonk_username'));
-
-    ## password decryption using the fsd-data-encryption class
-    $encryption = new listmonk_FSD_Data_Encryption();
-    $encrypted_password = sanitize_text_field(get_option('listmonk_password'));
-    $listmonk_password = $encryption->decrypt($encrypted_password);
-    
-    // append the url from the settings page
-    $url = $listmonk_url . '/api/subscribers';
-
-    // using the send_data_to_listmonk function we defined earlier, we communicate with the listmonk API through WordPress HTTP API
-
-    $response = listmonk_send_data_to_listmonk_wordpress_http_api($url, $body, $listmonk_username, $listmonk_password);
+    $response = listmonk_add_subscriber($body);
 
     if ($response['status_code'] == 200) {
         $order->add_order_note('Listmonk: customer subscribed to listmonk mailing list (ID = ' . $listmonk_list_id . ').');
