@@ -96,6 +96,7 @@ I created this plugin in my free time. I may have time to help you, but no guara
 3. Newsletter subscription form example. Created with WPForms, data will be sent to your listmonk server.
 
 == Changelog ==
+1.4.2 Updated for new wordpress verion. Fixes a bug with subscribers already being subscribed to another list not being able to subscribe to a different list.
 1.4.1 Added link to the settings page on the plugin page, Update the sanitation functions according to the data type, fixed a password saving bug
 1.4.0 Added support for WooCommerce block based checkout and added a debug mode
 1.3.7 Small bug fixes, added id value for checkbox during checkout, breaking change: label for checkout box changed from newsletter_optin to listmonk_newsletter_optin
