@@ -71,7 +71,7 @@ function listmonk_uninstall() {
 
 }
 
-add_action('woocommerce_blocks_loaded','listmonk_add_newsletter_checkbox_to_blocks_checkout');
+add_action('woocommerce_init', 'listmonk_add_newsletter_checkbox_to_blocks_checkout');
 
 // start of the code to add newsletter checkbox to checkout
 
